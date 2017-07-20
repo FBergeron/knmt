@@ -39,6 +39,8 @@ import nmt_chainer.dataprocessing.processors as processors
 
 import nmt_chainer.utilities.profiling_tools as profiling_tools
 
+import chainermn
+
 logging.basicConfig()
 log = logging.getLogger("rnns:train")
 log.setLevel(logging.INFO)
@@ -241,6 +243,11 @@ def do_train(config_training):
         import nmt_chainer.models.feedforward.multi_attention
         nmt_chainer.models.feedforward.multi_attention.disable_cudnn_softmax = True
 
+    comm = None
+    if config_training["training_management"]["use_chainermn"] == "True":
+        comm = chainermn.create_communicator()
+        print("Chainermn comm initialized.")
+
     src_indexer, tgt_indexer = load_voc_and_update_training_config(config_training)
 
     save_prefix = config_training.training_management.save_prefix
@@ -359,9 +366,17 @@ def do_train(config_training):
         serializers.load_npz(config_training.training_management.load_model, encdec)
 
     gpu = config_training.training_management.gpu
+    if comm is not None:
+        gpu = comm.intra_rank
+        # Hack so that train_on_data_chainer() uses the right gpu.
+        config_training.training_management.gpu = gpu
+    print("gpu={0}".format(gpu))
+
     if gpu is not None:
+        # chainer.cuda.get_device(gpu).use()
         encdec = encdec.to_gpu(gpu)
 
+    print("optimizer={0}".format(config_training.training.optimizer))
     if config_training.training.optimizer == "adadelta":
         optimizer = optimizers.AdaDelta()
     elif config_training.training.optimizer == "adam":
@@ -387,7 +402,12 @@ def do_train(config_training):
     else:
         raise NotImplemented
 
+    if comm is not None:
+        optimizer = chainermn.create_multi_node_optimizer(optimizer, comm)
+        print("Optimizer wrapped into multi_node_optimizer.")
+
     with cuda.get_device(gpu):
+        print("setup encdec on gpu={0}".format(gpu))
         optimizer.setup(encdec)
 
     if config_training.training.l2_gradient_clipping is not None and config_training.training.l2_gradient_clipping > 0:

@@ -89,6 +89,7 @@ def define_parser(parser):
                                            action=argument_parsing_tools.ArgumentActionNotOverwriteWithNone,
                                            help="same as positional argument --save_prefix")
     training_monitoring_group.add_argument("--gpu", type=int, help="specify gpu number to use, if any")
+    training_monitoring_group.add_argument("--use_chainermn", default=False, help="specify whether we should use chainermn or not.")
     training_monitoring_group.add_argument("--load_model", help="load the parameters of a previously trained model")
     training_monitoring_group.add_argument("--load_optimizer_state", help="load previously saved optimizer states")
     training_monitoring_group.add_argument("--load_trainer_snapshot", help="load previously saved trainer states")
