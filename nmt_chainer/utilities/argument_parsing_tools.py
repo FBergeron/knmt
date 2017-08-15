@@ -46,18 +46,18 @@ class OrderedNamespace(OrderedDict):
     @classmethod
     def load_from(cls, filename):
         d = json.load(open(filename), object_pairs_hook=OrderedDict)
-        return cls.convert_to_ordered_namespace(d)
+        cls.convert_to_ordered_namespace(d)
+        return d
 
     @classmethod
     def convert_to_ordered_namespace(cls, ordered_dict):
-        ns = OrderedNamespace()
-        for k, v in six.iteritems(ordered_dict):
+        for v in ordered_dict.itervalues():
             if isinstance(v, OrderedDict):
-                converted_v = cls.convert_to_ordered_namespace(v)
-                ns[k] = converted_v
-            else:
-                ns[k] = v
-        return ns
+                cls.convert_to_ordered_namespace(v)
+        if not isinstance(ordered_dict, OrderedDict):
+            raise ValueError()
+        ordered_dict.__class__ = cls
+        ordered_dict.readonly = False
 
     def update_recursive(self, other, valid_keys, add_absent_keys=False):
         if not isinstance(other, OrderedNamespace):
@@ -73,10 +73,9 @@ class OrderedNamespace(OrderedDict):
                     self[key] = OrderedNamespace()
                 self[key].update_recursive(val, valid_keys, add_absent_keys=add_absent_keys)
             else:
-                # Is this test still needed? - FB 
-                # if key in self:
-                #     if (isinstance(self[key], OrderedNamespace)):
-                #         raise ValueError()
+                if key in self:
+                    if (isinstance(self[key], OrderedNamespace)):
+                        raise ValueError()
                 if key in valid_keys or (add_absent_keys and key not in self):
                     self[key] = val
 
