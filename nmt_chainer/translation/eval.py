@@ -282,7 +282,7 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
         attn_vis.make_plot(generate_attention_html)
 
     if len(graph_data) > 0:
-        make_graph(graph_data, format="svg", output_file_basename="/home/frederic/g", indexer=tgt_indexer)
+        make_graph(graph_data, translations, format="svg", output_file_basename="/home/frederic/g", indexer=tgt_indexer)
 
 def create_and_load_encdec_from_files(config_training_fn, trained_model):
     log.info("loading model config from %s" % config_training_fn)

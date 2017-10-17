@@ -244,8 +244,11 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
     if graph_data is not None and num_step is not None:
         nodes = []
         edges = []
-        nodes.append("X-SOS")
+        finished_translation_count = 0 if len(graph_data) == 0 else graph_data[-1][2]
+        if num_step == 0:
+            nodes.append("X-SOS")
         for word in set(next_words_list):
+        #for word in next_words_list:
             node_id = "{0}-{1}".format(num_step, word)
             log.info("node_id={0}".format(node_id))
             nodes.append(node_id)
@@ -265,14 +268,19 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
                         log.info("score={0} trans_index={1}".format(score, trans_index))
                         edges.append((src_node_id, node_id, score))
                         log.info("nxt_trans={0} vs finished_translations={1}".format(nxt_trans, [x[0] for x in finished_translations]))
-                        # if nxt_trans in [x[0] for x in finished_translations]:
-                        #     eos_node_id = "{0}-{1}".format(num_step, eos_idx)
-                        #     log.info("create eos node! {0}".format(eos_node_id))
-                        #     nodes.append(eos_node_id)
-                        #     edges.append(node_id, eos_node_id, 0)
+            if len(finished_translations) > finished_translation_count:
+                for fin_trans in finished_translations[finished_translation_count:]:
+                    trans = fin_trans[0]
+                    tgt_note_id = "{0}-EOS".format(num_step)
+                    nodes.append(tgt_note_id)
+                    src_node_id = "{0}-{1}".format(num_step-1, trans[-1])
+                    score = fin_trans[1]
+                    log.info("EOS src_node_id={0} tgt_note_id={1}".format(src_node_id, tgt_note_id))
+                    edges.append((src_node_id, tgt_note_id, score))
+                finished_translation_count += len(finished_translations)
         log.info("nodes={0}".format(nodes))
         log.info("edges={0}".format(edges))
-        step_data = (nodes, edges)
+        step_data = (nodes, edges, finished_translation_count)
         graph_data.append(step_data)
 
     return next_states_list, next_words_list, next_score_list, next_translations_list, next_attentions_list
