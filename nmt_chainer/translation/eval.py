@@ -20,7 +20,7 @@ from nmt_chainer.utilities.file_infos import create_filename_infos
 from nmt_chainer.utilities.argument_parsing_tools import OrderedNamespace
 import time
 import os.path
-from nmt_chainer.utilities.utils import ensure_path
+from nmt_chainer.utilities.utils import ensure_path, make_graph
 # from utils import make_batch_src, make_batch_src_tgt, minibatch_provider, compute_bleu_with_unk_as_wrong, de_batch
 from nmt_chainer.translation.evaluation import (greedy_batch_translate,
                                                 #                         convert_idx_to_string,
@@ -126,7 +126,8 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
                     remove_unk=False,
                     normalize_unicode_unk=False,
                     attempt_to_relocate_unk_source=False,
-                    nbest=None):
+                    nbest=None,
+                    graph_data=None):
 
     log.info("starting beam search translation of %i sentences" % len(src_data))
     if isinstance(encdec, (list, tuple)) and len(encdec) > 1:
@@ -150,8 +151,10 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
             prob_space_combination=prob_space_combination,
             reverse_encdec=reverse_encdec,
             use_unfinished_translation_if_none_found=use_unfinished_translation_if_none_found,
-            nbest=nbest)
+            nbest=nbest,
+            graph_data=graph_data)
 
+        log.info("end of beam search")
         for num_t, translations in enumerate(translations_gen):
             res_trans = []
             for trans in translations:
@@ -178,6 +181,7 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
                     assert False
 
                 translated = tgt_indexer.deconvert_swallow(t, unk_tag=unk_replacer)
+                log.info("t={0} translated={1}".format(t, translated))
 
                 unk_mapping = []
                 ct = " ".join(translated)
@@ -216,6 +220,8 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
                                        unprocessed_output_filename=None,
                                        nbest=None):
 
+    graph_data = []
+
     log.info("writing translation to %s " % dest_fn)
     out = codecs.open(dest_fn, "w", encoding="utf8")
 
@@ -232,7 +238,8 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
                                            remove_unk=remove_unk,
                                            normalize_unicode_unk=normalize_unicode_unk,
                                            attempt_to_relocate_unk_source=attempt_to_relocate_unk_source,
-                                           nbest=nbest)
+                                           nbest=nbest,
+                                           graph_data=graph_data)
 
     attn_vis = None
     if generate_attention_html is not None:
@@ -249,6 +256,7 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
 
     for idx, translations in enumerate(translation_iterator):
         for src, translated, t, score, attn, unk_mapping in translations:
+            log.info("translated={0}".format(translated))
             if rich_output is not None:
                 rich_output.add_info(src, translated, t, score, attn, unk_mapping=unk_mapping)
             if attn_vis is not None:
@@ -259,6 +267,7 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
                     attn_graph_with_sum,
                     attn_graph_attribs)
             ct = tgt_indexer.deconvert_post(translated)
+            log.info("ct={0}".format(ct))
             if nbest is not None:
                 out.write("{0} ||| {1}\n".format(idx, ct))
             else:
@@ -272,6 +281,8 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
     if attn_vis is not None:
         attn_vis.make_plot(generate_attention_html)
 
+    if len(graph_data) > 0:
+        make_graph(graph_data, format="svg", output_file_basename="/home/frederic/g", indexer=tgt_indexer)
 
 def create_and_load_encdec_from_files(config_training_fn, trained_model):
     log.info("loading model config from %s" % config_training_fn)

@@ -12,6 +12,8 @@ import numpy as np
 import chainer
 from chainer import Variable, cuda
 import random
+import graphviz as gv
+import operator
 
 logging.basicConfig()
 log = logging.getLogger("rnns:utils")
@@ -398,3 +400,43 @@ def minibatch_sampling(probs):
 #                                        decoder_cell_type = rnn_cells.cell_dict[decoder_cell_type])
 #
 #     return encdec, eos_idx, src_indexer, tgt_indexer
+
+def make_graph(data, format="svg", output_file_basename=None, indexer=None):
+    best_path_width = 5
+    g = gv.Digraph(format=format)
+    for index, step_data in list(enumerate(data)):
+        nodes, edges = step_data
+        edges.sort(key=operator.itemgetter(2), reverse=True)
+        best_node_id = str(edges[0][1]) if len(edges) > 0 else None
+        log.info("make_graph nodes={0} edges={1} best_node_id={2}".format(nodes, edges, best_node_id))
+        for node_id in nodes:
+            node_num_step, node_word = node_id.split("-")
+            log.info("node_word={0}".format(node_word))
+            if node_word == "SOS":
+                g.node(node_id, node_id, shape="diamond", color="red", penwidth=str(best_path_width))
+                log.info("node {0}".format(node_id))
+            elif node_word == "EOS":
+                g.node(node_id, node_id, shape="octogon")
+                log.info("node {0}".format(node_id))
+            else:
+                node_label = "{0}={1}".format(node_id, indexer.deconvert_swallow([int(node_word)])[0]) if indexer is not None else str(node)
+                log.info("node_id={0} vs best_node_id={1} egal?={2}".format(node_id, best_node_id, (node_id == best_node_id)))
+                if node_id == best_node_id:
+                    node_color = "red"
+                    node_width = str(best_path_width)
+                else:
+                    node_color = "black"
+                    node_width = "1"
+                g.node(node_id, node_label, color=node_color, penwidth=node_width)
+                log.info("node {0}={1}".format(node_id, node_label))
+        edge_width = best_path_width
+        edge_color = "red"
+        for src_node, tgt_node, score in edges:
+            log.info("edge {0} -> {1}".format(src_node, tgt_node))
+            g.edge(str(src_node), str(tgt_node), str(score), penwidth=str(edge_width), color=edge_color)
+            if edge_width == best_path_width:
+                edge_width = 1
+            edge_color = "black"
+
+    g.render(output_file_basename)  
+

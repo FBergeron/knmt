@@ -16,6 +16,8 @@ import operator
 import beam_search
 import chainer
 # import h5py
+import graphviz as gv
+import uuid
 
 logging.basicConfig()
 log = logging.getLogger("rnns:evaluation")
@@ -164,7 +166,7 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                           groundhog=False, force_finish=False,
                           prob_space_combination=False,
                           reverse_encdec=None, use_unfinished_translation_if_none_found=False,
-                          nbest=None):
+                          nbest=None, graph_data=None):
     nb_ex = len(src_data)
     for num_ex in range(nb_ex):
         src_batch, src_mask = make_batch_src([src_data[num_ex]], gpu=gpu)
@@ -192,7 +194,7 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                                                         beam_score_coverage_penalty_strength=beam_score_coverage_penalty_strength,
                                                         need_attention=need_attention, force_finish=force_finish,
                                                         prob_space_combination=prob_space_combination,
-                                                        use_unfinished_translation_if_none_found=use_unfinished_translation_if_none_found)
+                                                        use_unfinished_translation_if_none_found=use_unfinished_translation_if_none_found, graph_data=graph_data)
 
         # TODO: This is a quick patch, but actually ensemble_beam_search probably should not return empty translations except when no translation found
         if len(translations) > 1:
@@ -258,6 +260,8 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                 return x[1] / length_normalization + coverage_penalty
 
         translations.sort(key=ranking_criterion, reverse=True)
+        
+        log.info("translation finale={0}".format(translations[0]))
 
         if nbest is not None:
             yield translations[:nbest]
