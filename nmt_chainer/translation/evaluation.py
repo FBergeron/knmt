@@ -260,7 +260,13 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                 return x[1] / length_normalization + coverage_penalty
 
         translations.sort(key=ranking_criterion, reverse=True)
-        
+    
+        if graph_data is not None:
+            final_scores = {}
+            for trans in translations:
+                final_scores[str(trans[0])] = trans(1)
+            graph_data.append(final_scores)
+
         log.info("translation finale={0}".format(translations[0]))
 
         if nbest is not None:
