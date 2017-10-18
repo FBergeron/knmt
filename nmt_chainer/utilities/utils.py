@@ -424,6 +424,7 @@ def make_graph(data, translations, format="svg", output_file_basename=None, inde
             if node_word == "SOS":
                 node_color = "red"
                 node_width = best_path_width
+                node_shape = "diamond"
             elif node_word == "EOS":
                 node_shape = "square"
                 if len(translations[0][2]) == index:

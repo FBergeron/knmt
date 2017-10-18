@@ -273,17 +273,17 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
                         log.info("score={0} trans_index={1}".format(score, trans_index))
                         edges.append((src_node_id, node_id, score))
                         log.info("nxt_trans={0} vs finished_translations={1}".format(nxt_trans, [x[0] for x in finished_translations]))
-            for fin_trans in [x for x in finished_translations if len(x[0]) == num_step]:
-                trans = fin_trans[0]
-                tgt_note_id = "{0}-EOS".format(num_step)
-                nodes.append(tgt_note_id)
-                src_node_id = "{0}-{1}".format(num_step-1, trans[-1])
-                score = fin_trans[1]
-                log.info("EOS src_node_id={0} tgt_note_id={1}".format(src_node_id, tgt_note_id))
-                edge_id = "{0} -> {1}".format(src_node_id, tgt_note_id)
-                if edge_id not in created_edges:
-                    edges.append((src_node_id, tgt_note_id, score))
-                    created_edges.add(edge_id)
+        for fin_trans in [x for x in finished_translations if len(x[0]) == num_step]:
+            trans = fin_trans[0]
+            tgt_note_id = "{0}-EOS".format(num_step)
+            nodes.append(tgt_note_id)
+            src_node_id = "{0}-{1}".format(num_step-1, trans[-1])
+            score = fin_trans[1]
+            log.info("EOS src_node_id={0} tgt_note_id={1}".format(src_node_id, tgt_note_id))
+            edge_id = "{0} -> {1}".format(src_node_id, tgt_note_id)
+            if edge_id not in created_edges:
+                edges.append((src_node_id, tgt_note_id, score))
+                created_edges.add(edge_id)
         log.info("nodes={0}".format(nodes))
         log.info("edges={0}".format(edges))
         step_data = (nodes, edges)
