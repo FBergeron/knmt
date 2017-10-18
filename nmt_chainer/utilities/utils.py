@@ -407,7 +407,7 @@ def make_graph(data, translations, format="svg", output_file_basename=None, inde
     best_tgt_node_id = None
     g = gv.Digraph(format=format)
     for index, step_data in list(enumerate(data)):
-        nodes, edges, finishied_translation_count = step_data
+        nodes, edges = step_data
         edges.sort(key=operator.itemgetter(2), reverse=True)
         best_tgt_node_id = None
         log.info("make_graph nodes={0} edges={1} translations={2}".format(nodes, edges, translations))
@@ -431,7 +431,6 @@ def make_graph(data, translations, format="svg", output_file_basename=None, inde
                     node_width = best_path_width
                     best_src_node_id = "{0}-{1}".format(index-1, translations[0][2][-1])
                     best_tgt_node_id = node_id
-                    log.info("AFTER: best_src_node_id={0} best_tgt_node_id={1}".format(best_src_node_id, best_tgt_node_id))
             elif indexer is not None:
                 node_label = "{0}={1}".format(node_id, indexer.deconvert_swallow([int(node_word)])[0])
                 # node_label = indexer.deconvert_swallow([int(node_word)])[0]

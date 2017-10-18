@@ -189,7 +189,7 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
     else:
         score_iterator = iterate_best_score(new_scores, beam_width)
 
-    log.info("finished_translations BEFORE={0}".format(finished_translations))
+    log.info("finished_translations BEFORE={0}".format([x[0] for x in finished_translations]))
 
     for num_case, idx_in_case, new_cost in score_iterator:
         if len(current_translations[num_case]) > 0:
@@ -205,7 +205,7 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
 #             if len(next_states_list) >= beam_width:
 #                 break
 
-    log.info("finished_translations AFTER={0}".format(finished_translations))
+    log.info("finished_translations AFTER={0}".format([x[0] for x in finished_translations]))
 
     # Prune items that have a score worse than beam_pruning_margin below the
     # best score.
@@ -249,7 +249,6 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
     if graph_data is not None and num_step is not None:
         nodes = []
         edges = []
-        finished_translation_count = 0 if len(graph_data) == 0 else graph_data[-1][2]
         if num_step == 0:
             nodes.append("X-SOS")
         for word in set(next_words_list):
@@ -273,19 +272,17 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
                         log.info("score={0} trans_index={1}".format(score, trans_index))
                         edges.append((src_node_id, node_id, score))
                         log.info("nxt_trans={0} vs finished_translations={1}".format(nxt_trans, [x[0] for x in finished_translations]))
-            if len(finished_translations) > finished_translation_count:
-                for fin_trans in finished_translations[finished_translation_count:]:
-                    trans = fin_trans[0]
-                    tgt_note_id = "{0}-EOS".format(num_step)
-                    nodes.append(tgt_note_id)
-                    src_node_id = "{0}-{1}".format(num_step-1, trans[-1])
-                    score = fin_trans[1]
-                    log.info("EOS src_node_id={0} tgt_note_id={1}".format(src_node_id, tgt_note_id))
-                    edges.append((src_node_id, tgt_note_id, score))
-                finished_translation_count += len(finished_translations)
+            for fin_trans in [x for x in finished_translations if len(x) == num_step]:
+                trans = fin_trans[0]
+                tgt_note_id = "{0}-EOS".format(num_step)
+                nodes.append(tgt_note_id)
+                src_node_id = "{0}-{1}".format(num_step-1, trans[-1])
+                score = fin_trans[1]
+                log.info("EOS src_node_id={0} tgt_note_id={1}".format(src_node_id, tgt_note_id))
+                edges.append((src_node_id, tgt_note_id, score))
         log.info("nodes={0}".format(nodes))
         log.info("edges={0}".format(edges))
-        step_data = (nodes, edges, finished_translation_count)
+        step_data = (nodes, edges)
         graph_data.append(step_data)
 
     return next_states_list, next_words_list, next_score_list, next_translations_list, next_attentions_list
