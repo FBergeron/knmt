@@ -403,45 +403,50 @@ def minibatch_sampling(probs):
 
 def make_graph(data, translations, format="svg", output_file_basename=None, indexer=None):
     best_path_width = 5
-    best_eos_found = False
     g = gv.Digraph(format=format)
     for index, step_data in list(enumerate(data)):
         nodes, edges, finishied_translation_count = step_data
         edges.sort(key=operator.itemgetter(2), reverse=True)
-        best_node_id = str(edges[0][1]) if len(edges) > 0 else None
-        log.info("make_graph nodes={0} edges={1} best_node_id={2}".format(nodes, edges, best_node_id))
+        best_tgt_node_id = None
+        log.info("make_graph nodes={0} edges={1} translations={2}".format(nodes, edges, translations))
         for node_id in sorted(set(nodes), key=lambda node: node.split("-")[1], reverse=True):
             node_num_step, node_word = node_id.split("-")
             log.info("node_word={0}".format(node_word))
+
+            node_color = "black"
+            node_width = 1
+            node_shape = "ellipse"
+            node_label = node_id
+
             if node_word == "SOS":
-                g.node(node_id, node_id, shape="diamond", color="red", penwidth=str(best_path_width))
-                log.info("node {0}".format(node_id))
-            else:
-                node_label = "{0}={1}".format(node_id, indexer.deconvert_swallow([int(node_word)])[0]) if indexer is not None and node_word != "EOS" else node_id
-                log.info("node_id={0} vs best_node_id={1} egal?={2}".format(node_id, best_node_id, (node_id == best_node_id)))
-                if node_id == best_node_id and not best_eos_found:
+                node_color = "red"
+                node_width = best_path_width
+            elif node_word == "EOS":
+                node_shapte = "square"
+            elif indexer is not None:
+                node_label = "{0}={1}".format(node_id, indexer.deconvert_swallow([int(node_word)])[0])
+                if int(node_word) in map(lambda x: x[2][index] if index < len(x[2]) else None, translations):
+                    best_src_node_id = "X-SOS" if index == 0 else "{0}-{1}".format(index-1, translations[0][2][index-1])
+                    best_tgt_node_id = node_id
+                    log.info("best_src_node_id={0} best_tgt_node_id={1}".format(best_src_node_id, best_tgt_node_id))
                     node_color = "red"
-                    node_width = str(best_path_width)
-                    if node_word == "EOS":
-                        best_eos_found = True
-                else:
-                    node_color = "black"
-                    node_width = "1"
-                node_shape = "square" if node_word == "EOS" else "ellipse"
-                g.node(node_id, node_label, color=node_color, penwidth=node_width, shape=node_shape)
-                log.info("node {0}={1}".format(node_id, node_label))
-        if not best_eos_found:
-            edge_width = best_path_width
-            edge_color = "red"
-        else:
-            edge_width = 1
-            edge_color = "black"
+                    node_width = best_path_width
+
+            g.node(node_id, node_label, color=node_color, penwidth=str(node_width), shape=node_shape)
+            log.info("node {0}={1}".format(node_id, node_label))
+
+        best_edge_found = False
         for src_node, tgt_node, score in edges:
+            edge_color = "black"
+            edge_width = 1
+            
+            if not best_edge_found and src_node == best_src_node_id and tgt_node == best_tgt_node_id:
+                best_edge_found = True
+                edge_color = "red"
+                edge_width = best_path_width
+
             log.info("edge {0} -> {1}".format(src_node, tgt_node))
             g.edge(str(src_node), str(tgt_node), str(score), penwidth=str(edge_width), color=edge_color)
-            if edge_width == best_path_width:
-                edge_width = 1
-            edge_color = "black"
 
     g.render(output_file_basename)  
 
