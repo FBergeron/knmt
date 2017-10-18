@@ -96,6 +96,7 @@ def update_next_lists(num_case, idx_in_case, new_cost, eos_idx, new_state_ensemb
         But the lists finished_translations, next_states_list, next_words_list, next_score_list, next_translations_list, next_attentions_list
             will be updated.
     """
+    log.info("update_next_lists idx_in_case={0} eos_idx={1} current_translations={2}".format(idx_in_case, eos_idx, current_translations))
     if idx_in_case == eos_idx:
         if need_attention:
             finished_translations.append((current_translations[num_case],
@@ -188,6 +189,8 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
     else:
         score_iterator = iterate_best_score(new_scores, beam_width)
 
+    log.info("finished_translations BEFORE={0}".format(finished_translations))
+
     for num_case, idx_in_case, new_cost in score_iterator:
         if len(current_translations[num_case]) > 0:
             if beam_score_length_normalization == 'simple':
@@ -201,6 +204,8 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
         assert len(next_states_list) <= beam_width
 #             if len(next_states_list) >= beam_width:
 #                 break
+
+    log.info("finished_translations AFTER={0}".format(finished_translations))
 
     # Prune items that have a score worse than beam_pruning_margin below the
     # best score.
@@ -507,7 +512,7 @@ def ensemble_beam_search(model_ensemble, src_batch, src_mask, nb_steps, eos_idx,
                 num_step=num_step)
    
             log.info("finished_translations={0}".format([x[0] for x in finished_translations]))
-            log.info("current_translations_states={0}".format([x[0]for x in current_translations_states]))
+            # log.info("current_translations_states={0}".format([x[0] for x in current_translations_states]))
 
             if current_translations_states is None:
                 break
