@@ -127,7 +127,7 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
                     normalize_unicode_unk=False,
                     attempt_to_relocate_unk_source=False,
                     nbest=None,
-                    graph_data=None):
+                    tree_data=None):
 
     log.info("starting beam search translation of %i sentences" % len(src_data))
     if isinstance(encdec, (list, tuple)) and len(encdec) > 1:
@@ -152,7 +152,7 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
             reverse_encdec=reverse_encdec,
             use_unfinished_translation_if_none_found=use_unfinished_translation_if_none_found,
             nbest=nbest,
-            graph_data=graph_data)
+            tree_data=tree_data)
 
         log.info("end of beam search")
         for num_t, translations in enumerate(translations_gen):
@@ -220,7 +220,7 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
                                        unprocessed_output_filename=None,
                                        nbest=None):
 
-    graph_data = []
+    tree_data = []
 
     log.info("writing translation to %s " % dest_fn)
     out = codecs.open(dest_fn, "w", encoding="utf8")
@@ -239,7 +239,7 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
                                            normalize_unicode_unk=normalize_unicode_unk,
                                            attempt_to_relocate_unk_source=attempt_to_relocate_unk_source,
                                            nbest=nbest,
-                                           graph_data=graph_data)
+                                           tree_data=tree_data)
 
     attn_vis = None
     if generate_attention_html is not None:
@@ -281,8 +281,8 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
     if attn_vis is not None:
         attn_vis.make_plot(generate_attention_html)
 
-    if len(graph_data) > 0:
-        make_graph(graph_data, translations, format="svg", output_file_basename="/home/frederic/g", indexer=tgt_indexer)
+    if len(tree_data) > 0:
+        make_graph(tree_data, translations, format="svg", output_file_basename="/home/frederic/g", indexer=tgt_indexer)
 
 def create_and_load_encdec_from_files(config_training_fn, trained_model):
     log.info("loading model config from %s" % config_training_fn)

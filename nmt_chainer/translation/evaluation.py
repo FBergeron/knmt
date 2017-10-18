@@ -7,7 +7,7 @@ __version__ = "1.0"
 __email__ = "fabien.cromieres@gmail.com"
 __status__ = "Development"
 
-from nmt_chainer.utilities.utils import make_batch_src, make_batch_src_tgt, minibatch_provider, compute_bleu_with_unk_as_wrong, de_batch
+from nmt_chainer.utilities.utils import make_batch_src, make_batch_src_tgt, minibatch_provider, compute_bleu_with_unk_as_wrong, de_batch, build_resolution_tree
 import logging
 import numpy as np
 import math
@@ -166,7 +166,7 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                           groundhog=False, force_finish=False,
                           prob_space_combination=False,
                           reverse_encdec=None, use_unfinished_translation_if_none_found=False,
-                          nbest=None, graph_data=None):
+                          nbest=None, tree_data=None):
     nb_ex = len(src_data)
     for num_ex in range(nb_ex):
         src_batch, src_mask = make_batch_src([src_data[num_ex]], gpu=gpu)
@@ -194,7 +194,7 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                                                         beam_score_coverage_penalty_strength=beam_score_coverage_penalty_strength,
                                                         need_attention=need_attention, force_finish=force_finish,
                                                         prob_space_combination=prob_space_combination,
-                                                        use_unfinished_translation_if_none_found=use_unfinished_translation_if_none_found, graph_data=graph_data)
+                                                        use_unfinished_translation_if_none_found=use_unfinished_translation_if_none_found, tree_data=tree_data)
 
         # TODO: This is a quick patch, but actually ensemble_beam_search probably should not return empty translations except when no translation found
         if len(translations) > 1:
@@ -261,11 +261,13 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
 
         translations.sort(key=ranking_criterion, reverse=True)
     
-        if graph_data is not None:
+        if tree_data is not None:
             final_scores = {}
             for trans in translations:
-                final_scores[str(trans[0])] = trans(1)
-            graph_data.append(final_scores)
+                final_scores[str(trans[0])] = trans[1]
+            tree_data = (tree_data, final_scores)
+            tree = build_resolution_tree(tree_data)
+            log.info("tree={0}".format(tree))
 
         log.info("translation finale={0}".format(translations[0]))
 

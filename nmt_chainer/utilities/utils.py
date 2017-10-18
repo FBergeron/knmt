@@ -402,6 +402,7 @@ def minibatch_sampling(probs):
 #     return encdec, eos_idx, src_indexer, tgt_indexer
 
 def make_graph(data, translations, format="svg", output_file_basename=None, indexer=None):
+
     best_path_width = 5
     best_src_node_id = None
     best_tgt_node_id = None
@@ -461,4 +462,38 @@ def make_graph(data, translations, format="svg", output_file_basename=None, inde
             g.edge(str(src_node), str(tgt_node), str(score), penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
 
     g.render(output_file_basename)  
+
+
+class Tree(object):
+
+    def __init__(self, data):
+        self.data = data
+        self.children = None
+
+    def __repr__(self):
+        str = "None" if self.data is None else self.data.__str__()
+        if self.children is not None:
+            str += " " + self.children.__str__()
+        return str
+
+
+def build_resolution_tree(tree_data):
+    all_nodes = {}
+    root_node = None
+    for step_index, step_data in enumerate(tree_data[0]):
+        nodes, edges = step_data
+        for node in nodes:
+            tree_node = Tree(node)
+            all_nodes[node] = tree_node
+            if root_node is None:
+                root_node = tree_node 
+        for edge in edges:
+            src_node, tgt_node, score = edge
+            parent_node = all_nodes[src_node]
+            child_node = all_nodes[tgt_node]
+            if parent_node is not None and child_node is not None:
+                if parent_node.children is None:
+                    parent_node.children = []
+                parent_node.children.append((child_node, score))
+    return root_node
 
