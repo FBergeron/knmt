@@ -401,8 +401,86 @@ def minibatch_sampling(probs):
 #
 #     return encdec, eos_idx, src_indexer, tgt_indexer
 
-def make_graph(data, translations, format="svg", output_file_basename=None, indexer=None):
+best_path_width = 5
 
+def make_dot_graph(tree, format="svg", translations=None, output_file_basename=None, indexer=None):
+    g = gv.Digraph(format=format)
+
+    make_dot_graph_rec(g, tree, translations, indexer, set())
+
+    if output_file_basename:
+        g.render(output_file_basename)
+
+    return g
+
+def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
+    best_trans = translations[0]
+    node_id = tree.data
+    node_num_step, node_word = node_id.split("-")
+
+    best_src_node_id = None
+    best_tgt_node_id = None
+
+    node_color = "black"
+    node_width = 1
+    node_shape = "ellipse"
+    node_label = node_id
+
+    if node_word == "SOS":
+        node_color = "red"
+        node_width = best_path_width
+        node_shape = "diamond"
+        best_src_node_id = node_id
+        best_tgt_node_id = "0-{0}".format(best_trans[2][0])
+    elif node_word == "EOS":
+        node_shape = "square"
+        if len(best_trans[2]) == int(node_num_step):
+            node_color = "red"
+            node_width = best_path_width
+    elif indexer is not None:
+        int_node_num_step = int(node_num_step)
+        if int_node_num_step < len(best_trans[2]) and int(node_word) == best_trans[2][int_node_num_step]:
+            best_src_node_id = node_id
+            best_tgt_node_id = "{0}-{1}".format(int_node_num_step+1, best_trans[2][int_node_num_step+1]) if int_node_num_step < len(best_trans[2]) -1 else "{0}-EOS".format(int_node_num_step+1) 
+
+        node_label = "{0}={1}".format(node_id, indexer.deconvert_swallow([int(node_word)])[0])
+        # node_label = indexer.deconvert_swallow([int(node_word)])[0]
+
+        if node_id == best_src_node_id:
+            node_color = "red"
+            node_width = best_path_width
+    
+    g.node(node_id, node_label, color=node_color, penwidth=str(node_width), shape=node_shape)
+
+    if tree.children is not None:
+        best_edge_found = False
+        for child in sorted(tree.children, key=operator.itemgetter(1), reverse=True):
+            child_node, score = child
+
+            src_node = node_id
+            tgt_node = child_node.data
+
+            edge_color = "black"
+            edge_width = 1
+            edge_weight = 1
+
+            if not best_edge_found and src_node == best_src_node_id and tgt_node == best_tgt_node_id:
+                edge_color = "red"
+                edge_width = best_path_width
+                edge_weight = 100
+                best_edge_found = True
+
+            edge_id = "{0} -> {1} ({2})".format(src_node, tgt_node, score)
+            log.info("edge_id={0}".format(edge_id))
+            if edge_id not in created_edges: 
+                g.edge(src_node, tgt_node, str(score), penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
+                created_edges.add(edge_id)
+
+                make_dot_graph_rec(g, child_node, translations, indexer, created_edges)
+
+# Deprecated: Better use make_dot_graph() instead.  
+def make_graph(data, translations, format="svg", output_file_basename=None, indexer=None):
+    created_edges = set()
     best_path_width = 5
     best_src_node_id = None
     best_tgt_node_id = None
@@ -473,20 +551,24 @@ class Tree(object):
     def __repr__(self):
         str = "None" if self.data is None else self.data.__str__()
         if self.children is not None:
-            str += " " + self.children.__str__()
+            printed_children = set()
+            for child in self.children:
+                if child[0].data not in printed_children:
+                    str += " " + child[0].__str__()
+                    printed_children.add(child[0].data)
         return str
-
 
 def build_resolution_tree(tree_data):
     all_nodes = {}
     root_node = None
-    for step_index, step_data in enumerate(tree_data[0]):
+    for step_data in tree_data:
         nodes, edges = step_data
         for node in nodes:
-            tree_node = Tree(node)
-            all_nodes[node] = tree_node
-            if root_node is None:
-                root_node = tree_node 
+            if node not in all_nodes:
+                tree_node = Tree(node)
+                all_nodes[node] = tree_node
+                if root_node is None:
+                    root_node = tree_node 
         for edge in edges:
             src_node, tgt_node, score = edge
             parent_node = all_nodes[src_node]
