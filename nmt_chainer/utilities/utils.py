@@ -412,7 +412,8 @@ def make_dot_graph(tree, format="svg", translations=None, output_file_basename=N
     return g
 
 def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
-    best_trans = translations[0]
+    best_translation = translations[0]
+    best_trans, best_trans_score, best_trans_attn, best_trans_norm_score = best_translation
 
     node_num_step, node_word = tree.data
     node_id = "{0}-{1}".format(node_num_step, node_word)
@@ -430,22 +431,22 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
         node_width = 5
         node_shape = "diamond"
         best_src_node_id = node_id
-        best_tgt_node_id = "0-{0}".format(best_trans[2][0])
+        best_tgt_node_id = "0-{0}".format(best_trans[0])
     elif node_word == "EOS":
         node_shape = "octagon"
-        if len(best_trans[2]) == int(node_num_step):
+        if len(best_trans) == int(node_num_step):
             node_color = "red"
             node_width = 5
-            score = translations[0][3]
-            normalized_score = translations[0][6]
+        for match_trans in sorted([trans for trans in translations if len(trans[0]) == int(node_num_step) - 1], key=lambda trans: trans[3], reverse=True): 
+            _, match_trans_score, _, match_trans_norm_score = match_trans
             # The string conversion prevents a ValueError.
-            if str(score) != str(normalized_score):
-                node_label += "\n{0}".format(normalized_score)
+            if str(match_trans_score) != str(match_trans_norm_score):
+                node_label += "\n{0}".format(match_trans_norm_score)
     elif indexer is not None:
         int_node_num_step = int(node_num_step)
-        if int_node_num_step < len(best_trans[2]) and int(node_word) == best_trans[2][int_node_num_step]:
+        if int_node_num_step < len(best_trans) and int(node_word) == best_trans[int_node_num_step]:
             best_src_node_id = node_id
-            best_tgt_node_id = "{0}-{1}".format(int_node_num_step+1, best_trans[2][int_node_num_step+1]) if int_node_num_step < len(best_trans[2]) -1 else "{0}-EOS".format(int_node_num_step+1) 
+            best_tgt_node_id = "{0}-{1}".format(int_node_num_step+1, best_trans[int_node_num_step+1]) if int_node_num_step < len(best_trans) -1 else "{0}-EOS".format(int_node_num_step+1) 
 
         node_label = "{0}={1}".format(node_id, indexer.deconvert_swallow([int(node_word)])[0])
         # node_label = indexer.deconvert_swallow([int(node_word)])[0]

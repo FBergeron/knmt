@@ -20,7 +20,7 @@ from nmt_chainer.utilities.file_infos import create_filename_infos
 from nmt_chainer.utilities.argument_parsing_tools import OrderedNamespace
 import time
 import os.path
-from nmt_chainer.utilities.utils import ensure_path, make_graph, build_resolution_tree, make_dot_graph
+from nmt_chainer.utilities.utils import ensure_path, make_graph
 # from utils import make_batch_src, make_batch_src_tgt, minibatch_provider, compute_bleu_with_unk_as_wrong, de_batch
 from nmt_chainer.translation.evaluation import (greedy_batch_translate,
                                                 #                         convert_idx_to_string,
@@ -152,6 +152,7 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
             reverse_encdec=reverse_encdec,
             use_unfinished_translation_if_none_found=use_unfinished_translation_if_none_found,
             nbest=nbest,
+            tgt_indexer=tgt_indexer,
             tree_data=tree_data)
 
         log.info("end of beam search")
@@ -280,11 +281,6 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
 
     if attn_vis is not None:
         attn_vis.make_plot(generate_attention_html)
-
-    if len(tree_data) > 0:
-        # make_graph(tree_data, translations, output_file_basename="/home/frederic/g", indexer=tgt_indexer)
-        tree = build_resolution_tree(tree_data)
-        make_dot_graph(tree, translations=translations, output_file_basename="/home/frederic/graph_from_tree", indexer=tgt_indexer)
 
 def create_and_load_encdec_from_files(config_training_fn, trained_model):
     log.info("loading model config from %s" % config_training_fn)

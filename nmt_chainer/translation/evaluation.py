@@ -7,7 +7,7 @@ __version__ = "1.0"
 __email__ = "fabien.cromieres@gmail.com"
 __status__ = "Development"
 
-from nmt_chainer.utilities.utils import make_batch_src, make_batch_src_tgt, minibatch_provider, compute_bleu_with_unk_as_wrong, de_batch
+from nmt_chainer.utilities.utils import make_batch_src, make_batch_src_tgt, minibatch_provider, compute_bleu_with_unk_as_wrong, de_batch, build_resolution_tree, make_dot_graph
 import logging
 import numpy as np
 import math
@@ -166,7 +166,7 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                           groundhog=False, force_finish=False,
                           prob_space_combination=False,
                           reverse_encdec=None, use_unfinished_translation_if_none_found=False,
-                          nbest=None, tree_data=None):
+                          nbest=None, tgt_indexer=None, tree_data=None):
     nb_ex = len(src_data)
     for num_ex in range(nb_ex):
         src_batch, src_mask = make_batch_src([src_data[num_ex]], gpu=gpu)
@@ -261,6 +261,11 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
 
         translations = map(lambda trans: trans + (ranking_criterion(trans),), translations)
         translations.sort(key=lambda trans: trans[-1], reverse=True)
+
+        if len(tree_data) > 0:
+            # make_graph(tree_data, translations, output_file_basename="/home/frederic/g", indexer=tgt_indexer)
+            tree = build_resolution_tree(tree_data)
+            make_dot_graph(tree, translations=translations, output_file_basename="/home/frederic/graph_from_tree", indexer=tgt_indexer)
 
         if nbest is not None:
             yield translations[:nbest]
