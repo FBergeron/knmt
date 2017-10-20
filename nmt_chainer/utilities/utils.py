@@ -401,8 +401,6 @@ def minibatch_sampling(probs):
 #
 #     return encdec, eos_idx, src_indexer, tgt_indexer
 
-best_path_width = 5
-
 def make_dot_graph(tree, format="svg", translations=None, output_file_basename=None, indexer=None):
     g = gv.Digraph(format=format)
 
@@ -428,7 +426,7 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
 
     if node_word == "SOS":
         node_color = "red"
-        node_width = best_path_width
+        node_width = 5
         node_shape = "diamond"
         best_src_node_id = node_id
         best_tgt_node_id = "0-{0}".format(best_trans[2][0])
@@ -436,7 +434,7 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
         node_shape = "octagon"
         if len(best_trans[2]) == int(node_num_step):
             node_color = "red"
-            node_width = best_path_width
+            node_width = 5
             score = translations[0][3]
             normalized_score = translations[0][6]
             # The string conversion prevents a ValueError.
@@ -453,7 +451,7 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
 
         if node_id == best_src_node_id:
             node_color = "red"
-            node_width = best_path_width
+            node_width = 5
     
     g.node(node_id, node_label, color=node_color, penwidth=str(node_width), shape=node_shape)
 
