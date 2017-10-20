@@ -413,8 +413,9 @@ def make_dot_graph(tree, format="svg", translations=None, output_file_basename=N
 
 def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
     best_trans = translations[0]
-    node_id = tree.data
-    node_num_step, node_word = node_id.split("-")
+
+    node_num_step, node_word = tree.data
+    node_id = "{0}-{1}".format(node_num_step, node_word)
 
     best_src_node_id = None
     best_tgt_node_id = None
@@ -460,23 +461,25 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
         for child in sorted(tree.children, key=operator.itemgetter(1), reverse=True):
             child_node, score = child
 
-            src_node = node_id
+            src_node_id = node_id
             tgt_node = child_node.data
+            tgt_node_num_step, tgt_node_word = tgt_node
+            tgt_node_id = "{0}-{1}".format(tgt_node_num_step, tgt_node_word)
 
             edge_color = "black"
             edge_width = 1
             edge_weight = 1
 
-            if not best_edge_found and src_node == best_src_node_id and tgt_node == best_tgt_node_id:
+            if not best_edge_found and src_node_id == best_src_node_id and tgt_node_id == best_tgt_node_id:
                 edge_color = "red"
                 edge_width = 5
                 edge_weight = 100
                 best_edge_found = True
 
-            edge_id = "{0} -> {1} ({2})".format(src_node, tgt_node, score)
+            edge_id = "{0} -> {1} ({2})".format(src_node_id, tgt_node_id, score)
             log.info("edge_id={0}".format(edge_id))
             if edge_id not in created_edges: 
-                g.edge(src_node, tgt_node, str(score), penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
+                g.edge(src_node_id, tgt_node_id, str(score), penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
                 created_edges.add(edge_id)
                 make_dot_graph_rec(g, child_node, translations, indexer, created_edges)
 
@@ -559,14 +562,15 @@ def build_resolution_tree(tree_data):
     root_node = None
     for step_data in tree_data:
         nodes, edges = step_data
-        for node in nodes:
-            if node not in all_nodes:
-                tree_node = Tree(node)
-                all_nodes[node] = tree_node
+        for node_id in nodes:
+            if node_id not in all_nodes:
+                node_num_step, node_word = node_id.split("-")
+                tree_node = Tree((node_num_step, node_word))
+                all_nodes[node_id] = tree_node
                 if root_node is None:
                     root_node = tree_node 
-        for edge in edges:
-            src_node, tgt_node, score = edge
+        for edge_id in edges:
+            src_node, tgt_node, score = edge_id
             parent_node = all_nodes[src_node]
             child_node = all_nodes[tgt_node]
             if parent_node is not None and child_node is not None:
