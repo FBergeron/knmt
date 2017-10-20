@@ -96,7 +96,6 @@ def update_next_lists(num_case, idx_in_case, new_cost, eos_idx, new_state_ensemb
         But the lists finished_translations, next_states_list, next_words_list, next_score_list, next_translations_list, next_attentions_list
             will be updated.
     """
-    log.info("update_next_lists idx_in_case={0} eos_idx={1} current_translations={2}".format(idx_in_case, eos_idx, current_translations))
     if idx_in_case == eos_idx:
         if need_attention:
             finished_translations.append((current_translations[num_case],
@@ -189,8 +188,6 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
     else:
         score_iterator = iterate_best_score(new_scores, beam_width)
 
-    log.info("finished_translations BEFORE={0}".format([x[0] for x in finished_translations]))
-
     for num_case, idx_in_case, new_cost in score_iterator:
         if len(current_translations[num_case]) > 0:
             if beam_score_length_normalization == 'simple':
@@ -204,8 +201,6 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
         assert len(next_states_list) <= beam_width
 #             if len(next_states_list) >= beam_width:
 #                 break
-
-    log.info("finished_translations AFTER={0}".format([x[0] for x in finished_translations]))
 
     # Prune items that have a score worse than beam_pruning_margin below the
     # best score.
@@ -245,7 +240,6 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
             del next_translations_list[i]
             del next_attentions_list[i]
 
-    log.info("eos_idx={0} next_words_list={1}".format(eos_idx, next_words_list))
     created_edges = set()
     if tree_data is not None and num_step is not None:
         nodes = []
@@ -255,12 +249,7 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
         for word in set(next_words_list):
         #for word in next_words_list:
             node_id = "{0}-{1}".format(num_step, word)
-            log.info("node_id={0}".format(node_id))
             nodes.append(node_id)
-            log.info("current_translations={0}".format(current_translations))
-            log.info("next_translations_list={0}".format(next_translations_list))
-            log.info("next_score_list={0}".format(next_score_list))
-            log.info("beam_score_coverage_penalty={0} next_normalized_score_list={1}".format(beam_score_coverage_penalty, next_normalized_score_list))
             for trans_index, nxt_trans in enumerate(next_translations_list):
                 if nxt_trans[-1] == word:
                     if len(nxt_trans) == 1:
@@ -270,22 +259,17 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
                     elif len(nxt_trans) > 1:
                         src_node_id = "{0}-{1}".format(num_step - 1, nxt_trans[-2])
                         score = next_score_list[trans_index] if beam_score_coverage_penalty is not "google" else next_normalized_score_list[trans_index]
-                        log.info("score={0} trans_index={1}".format(score, trans_index))
                         edges.append((src_node_id, node_id, score))
-                        log.info("nxt_trans={0} vs finished_translations={1}".format(nxt_trans, [x[0] for x in finished_translations]))
         for fin_trans in [x for x in finished_translations if len(x[0]) == num_step]:
             trans = fin_trans[0]
             tgt_note_id = "{0}-EOS".format(num_step)
             nodes.append(tgt_note_id)
             src_node_id = "{0}-{1}".format(num_step-1, trans[-1])
             score = fin_trans[1]
-            log.info("EOS src_node_id={0} tgt_note_id={1}".format(src_node_id, tgt_note_id))
             edge_id = "{0} -> {1}".format(src_node_id, tgt_note_id)
             if edge_id not in created_edges:
                 edges.append((src_node_id, tgt_note_id, score))
                 created_edges.add(edge_id)
-        log.info("nodes={0}".format(nodes))
-        log.info("edges={0}".format(edges))
         step_data = (nodes, edges)
         tree_data.append(step_data)
 

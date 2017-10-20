@@ -433,10 +433,15 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
         best_src_node_id = node_id
         best_tgt_node_id = "0-{0}".format(best_trans[2][0])
     elif node_word == "EOS":
-        node_shape = "square"
+        node_shape = "octagon"
         if len(best_trans[2]) == int(node_num_step):
             node_color = "red"
             node_width = best_path_width
+            score = translations[0][3]
+            normalized_score = translations[0][6]
+            # The string conversion prevents a ValueError.
+            if str(score) != str(normalized_score):
+                node_label += "\n{0}".format(normalized_score)
     elif indexer is not None:
         int_node_num_step = int(node_num_step)
         if int_node_num_step < len(best_trans[2]) and int(node_word) == best_trans[2][int_node_num_step]:
@@ -475,7 +480,6 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
             if edge_id not in created_edges: 
                 g.edge(src_node, tgt_node, str(score), penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
                 created_edges.add(edge_id)
-
                 make_dot_graph_rec(g, child_node, translations, indexer, created_edges)
 
 # Deprecated: Better use make_dot_graph() instead.  
@@ -489,11 +493,9 @@ def make_graph(data, translations, format="svg", output_file_basename=None, inde
         nodes, edges = step_data
         edges.sort(key=operator.itemgetter(2), reverse=True)
         best_tgt_node_id = None
-        log.info("make_graph nodes={0} edges={1} translations={2}".format(nodes, edges, translations))
         #for node_id in sorted(set(nodes), key=lambda node: node.split("-")[1], reverse=True):
         for node_id in set(nodes):
             node_num_step, node_word = node_id.split("-")
-            log.info("node_word={0} best_src_node_id={1} best_tgt_node_id={2}".format(node_word, best_src_node_id, best_tgt_node_id))
 
             node_color = "black"
             node_width = 1
@@ -517,12 +519,10 @@ def make_graph(data, translations, format="svg", output_file_basename=None, inde
                 if int(node_word) in map(lambda x: x[2][index] if index < len(x[2]) else None, translations):
                     best_src_node_id = "X-SOS" if index == 0 else "{0}-{1}".format(index-1, translations[0][2][index-1])
                     best_tgt_node_id = node_id
-                    log.info("best_src_node_id={0} best_tgt_node_id={1}".format(best_src_node_id, best_tgt_node_id))
                     node_color = "red"
                     node_width = best_path_width
 
             g.node(node_id, node_label, color=node_color, penwidth=str(node_width), shape=node_shape)
-            log.info("node {0}={1}".format(node_id, node_label))
 
         best_edge_found = False
         for src_node, tgt_node, score in edges:
@@ -536,7 +536,6 @@ def make_graph(data, translations, format="svg", output_file_basename=None, inde
                 edge_width = best_path_width
                 edge_weight = 100
 
-            log.info("edge {0} -> {1}".format(src_node, tgt_node))
             g.edge(str(src_node), str(tgt_node), str(score), penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
 
     g.render(output_file_basename)  

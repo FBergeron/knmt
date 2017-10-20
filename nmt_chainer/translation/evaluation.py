@@ -7,7 +7,7 @@ __version__ = "1.0"
 __email__ = "fabien.cromieres@gmail.com"
 __status__ = "Development"
 
-from nmt_chainer.utilities.utils import make_batch_src, make_batch_src_tgt, minibatch_provider, compute_bleu_with_unk_as_wrong, de_batch, build_resolution_tree
+from nmt_chainer.utilities.utils import make_batch_src, make_batch_src_tgt, minibatch_provider, compute_bleu_with_unk_as_wrong, de_batch
 import logging
 import numpy as np
 import math
@@ -259,17 +259,8 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
 
                 return x[1] / length_normalization + coverage_penalty
 
-        translations.sort(key=ranking_criterion, reverse=True)
-    
-        if tree_data is not None:
-            final_scores = {}
-            for trans in translations:
-                final_scores[str(trans[0])] = trans[1]
-            tree_data = (tree_data, final_scores)
-            tree = build_resolution_tree(tree_data)
-            log.info("tree={0}".format(tree))
-
-        log.info("translation finale={0}".format(translations[0]))
+        translations = map(lambda trans: trans + (ranking_criterion(trans),), translations)
+        translations.sort(key=lambda trans: trans[-1], reverse=True)
 
         if nbest is not None:
             yield translations[:nbest]

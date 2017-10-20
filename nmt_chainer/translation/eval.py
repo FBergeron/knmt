@@ -158,7 +158,7 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
         for num_t, translations in enumerate(translations_gen):
             res_trans = []
             for trans in translations:
-                (t, score, attn) = trans
+                (t, score, attn, normalized_score) = trans
                 if num_t % 200 == 0:
                     print >>sys.stderr, num_t,
                 elif num_t % 40 == 0:
@@ -196,7 +196,7 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
                         from nmt_chainer.utilities import replace_tgt_unk
                         translated = replace_tgt_unk.replace_unk_from_string(ct, src, dic, remove_unk, normalize_unicode_unk, attempt_to_relocate_unk_source).strip().split(" ")
 
-                res_trans.append((src_data[num_t], translated, t, score, attn, unk_mapping))
+                res_trans.append((src_data[num_t], translated, t, score, attn, unk_mapping, normalized_score))
 
             yield res_trans
 
@@ -255,7 +255,7 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
         unprocessed_output = codecs.open(unprocessed_output_filename, "w", encoding="utf8")
 
     for idx, translations in enumerate(translation_iterator):
-        for src, translated, t, score, attn, unk_mapping in translations:
+        for src, translated, t, score, attn, unk_mapping, normalized_score in translations:
             log.info("translated={0}".format(translated))
             if rich_output is not None:
                 rich_output.add_info(src, translated, t, score, attn, unk_mapping=unk_mapping)
@@ -284,7 +284,6 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
     if len(tree_data) > 0:
         # make_graph(tree_data, translations, output_file_basename="/home/frederic/g", indexer=tgt_indexer)
         tree = build_resolution_tree(tree_data)
-        # log.info("tree={0}".format(tree))
         make_dot_graph(tree, translations=translations, output_file_basename="/home/frederic/graph_from_tree", indexer=tgt_indexer)
 
 def create_and_load_encdec_from_files(config_training_fn, trained_model):
