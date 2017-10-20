@@ -469,7 +469,7 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
 
             if not best_edge_found and src_node == best_src_node_id and tgt_node == best_tgt_node_id:
                 edge_color = "red"
-                edge_width = best_path_width
+                edge_width = 5
                 edge_weight = 100
                 best_edge_found = True
 
@@ -483,7 +483,6 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
 # Deprecated: Better use make_dot_graph() instead.  
 def make_graph(data, translations, format="svg", output_file_basename=None, indexer=None):
     created_edges = set()
-    best_path_width = 5
     best_src_node_id = None
     best_tgt_node_id = None
     g = gv.Digraph(format=format)
@@ -502,13 +501,13 @@ def make_graph(data, translations, format="svg", output_file_basename=None, inde
 
             if node_word == "SOS":
                 node_color = "red"
-                node_width = best_path_width
+                node_width = 5
                 node_shape = "diamond"
             elif node_word == "EOS":
                 node_shape = "square"
                 if len(translations[0][2]) == index:
                     node_color = "red"
-                    node_width = best_path_width
+                    node_width = 5
                     best_src_node_id = "{0}-{1}".format(index-1, translations[0][2][-1])
                     best_tgt_node_id = node_id
             elif indexer is not None:
@@ -518,7 +517,7 @@ def make_graph(data, translations, format="svg", output_file_basename=None, inde
                     best_src_node_id = "X-SOS" if index == 0 else "{0}-{1}".format(index-1, translations[0][2][index-1])
                     best_tgt_node_id = node_id
                     node_color = "red"
-                    node_width = best_path_width
+                    node_width = 5
 
             g.node(node_id, node_label, color=node_color, penwidth=str(node_width), shape=node_shape)
 
@@ -531,7 +530,7 @@ def make_graph(data, translations, format="svg", output_file_basename=None, inde
             if not best_edge_found and src_node == best_src_node_id and tgt_node == best_tgt_node_id:
                 best_edge_found = True
                 edge_color = "red"
-                edge_width = best_path_width
+                edge_width = 5
                 edge_weight = 100
 
             g.edge(str(src_node), str(tgt_node), str(score), penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
