@@ -263,9 +263,9 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
         translations.sort(key=lambda trans: trans[-1], reverse=True)
 
         if len(tree_data) > 0:
-            # make_graph(tree_data, translations, output_file_basename="/home/frederic/g", indexer=tgt_indexer)
+            # make_graph(tree_data, translations, output_file_basename="trees/{0}".format(str(uuid.uuid4())), indexer=tgt_indexer)
             tree = build_resolution_tree(tree_data)
-            make_dot_graph(tree, translations=translations, output_file_basename="/home/frederic/graph_from_tree", indexer=tgt_indexer)
+            make_dot_graph(tree, translations=translations, output_file_basename="trees/{0}".format(str(uuid.uuid4())), indexer=tgt_indexer)
 
         if nbest is not None:
             yield translations[:nbest]
