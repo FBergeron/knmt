@@ -401,19 +401,22 @@ def minibatch_sampling(probs):
 #
 #     return encdec, eos_idx, src_indexer, tgt_indexer
 
-def make_dot_graph(tree, format="svg", translations=None, output_file_basename=None, indexer=None):
+def make_dot_graph(tree, format="svg", translations=None, output_file_basename=None, indexer=None, highlighted_trans=0, highlighted_trans_color="red", highlighted_trans_width=5):
     g = gv.Digraph(format=format)
 
-    make_dot_graph_rec(g, tree, translations, indexer, set())
+    make_dot_graph_rec(g, tree, translations, highlighted_trans, highlighted_trans_color, highlighted_trans_width, indexer, set())
 
     if output_file_basename:
         g.render(output_file_basename)
 
     return g
 
-def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
+def make_dot_graph_rec(g, tree, translations, highlighted_trans_index, highlighted_trans_color, highlighted_trans_width, indexer, created_edges):
     best_translation = translations[0]
     best_trans, best_trans_score, best_trans_attn, best_trans_norm_score = best_translation
+
+    highlighted_translation = translations[highlighted_trans_index]
+    highlighted_trans, highlighted_trans_score, highlighted_trans_attn, highlighted_trans_norm_score = highlighted_translation
 
     node_num_step, node_word = tree.data
     node_id = "{0}-{1}".format(node_num_step, node_word)
@@ -421,22 +424,27 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
     best_src_node_id = None
     best_tgt_node_id = None
 
+    highlighted_src_node_id = None
+    highlighted_tgt_node_id = None
+
     node_color = "black"
     node_width = 1
     node_shape = "ellipse"
     node_label = node_id
 
     if node_word == "SOS":
-        node_color = "red"
-        node_width = 5
+        node_color = highlighted_trans_color
+        node_width = highlighted_trans_width
         node_shape = "diamond"
         best_src_node_id = node_id
         best_tgt_node_id = "0-{0}".format(best_trans[0])
+        highlighted_src_node_id = node_id
+        highlighted_tgt_node_id = "0-{0}".format(highlighted_trans[0])
     elif node_word == "EOS":
         node_shape = "octagon"
-        if len(best_trans) == int(node_num_step):
-            node_color = "red"
-            node_width = 5
+        if len(highlighted_trans) == int(node_num_step):
+            node_color = highlighted_trans_color
+            node_width = highlighted_trans_width
         for match_trans in sorted([trans for trans in translations if len(trans[0]) == int(node_num_step) - 1], key=lambda trans: trans[3], reverse=True): 
             _, match_trans_score, _, match_trans_norm_score = match_trans
             # The string conversion prevents a ValueError.
@@ -447,18 +455,22 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
         if int_node_num_step < len(best_trans) and int(node_word) == best_trans[int_node_num_step]:
             best_src_node_id = node_id
             best_tgt_node_id = "{0}-{1}".format(int_node_num_step+1, best_trans[int_node_num_step+1]) if int_node_num_step < len(best_trans) -1 else "{0}-EOS".format(int_node_num_step+1) 
+        if int_node_num_step < len(highlighted_trans) and int(node_word) == highlighted_trans[int_node_num_step]:
+            highlighted_src_node_id = node_id
+            highlighted_tgt_node_id = "{0}-{1}".format(int_node_num_step+1, highlighted_trans[int_node_num_step+1]) if int_node_num_step < len(highlighted_trans) -1 else "{0}-EOS".format(int_node_num_step+1) 
 
         node_label = "{0}={1}".format(node_id, indexer.deconvert_swallow([int(node_word)])[0])
         # node_label = indexer.deconvert_swallow([int(node_word)])[0]
 
-        if node_id == best_src_node_id:
-            node_color = "red"
-            node_width = 5
+        if node_id == highlighted_src_node_id:
+            node_color = highlighted_trans_color
+            node_width = highlighted_trans_width
     
     g.node(node_id, node_label, color=node_color, penwidth=str(node_width), shape=node_shape)
 
     if tree.children is not None:
         best_edge_found = False
+        highlighted_edge_found = False
         for child in sorted(tree.children, key=operator.itemgetter(1), reverse=True):
             child_node, score = child
 
@@ -472,17 +484,19 @@ def make_dot_graph_rec(g, tree, translations, indexer, created_edges):
             edge_weight = 1
 
             if not best_edge_found and src_node_id == best_src_node_id and tgt_node_id == best_tgt_node_id:
-                edge_color = "red"
-                edge_width = 5
                 edge_weight = 100
                 best_edge_found = True
+            if not highlighted_edge_found and src_node_id == highlighted_src_node_id and tgt_node_id == highlighted_tgt_node_id:
+                edge_color = highlighted_trans_color
+                edge_width = highlighted_trans_width
+                highlighted_edge_found = True
 
             edge_id = "{0} -> {1} ({2})".format(src_node_id, tgt_node_id, score)
             log.info("edge_id={0}".format(edge_id))
             if edge_id not in created_edges: 
                 g.edge(src_node_id, tgt_node_id, str(score), penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
                 created_edges.add(edge_id)
-                make_dot_graph_rec(g, child_node, translations, indexer, created_edges)
+                make_dot_graph_rec(g, child_node, translations, highlighted_trans_index, highlighted_trans_color, highlighted_trans_width, indexer, created_edges)
 
 # Deprecated: Better use make_dot_graph() instead.  
 def make_graph(data, translations, format="svg", output_file_basename=None, indexer=None):

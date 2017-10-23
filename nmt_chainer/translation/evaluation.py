@@ -18,6 +18,8 @@ import chainer
 # import h5py
 import graphviz as gv
 import uuid
+import threading
+import timeit
 
 logging.basicConfig()
 log = logging.getLogger("rnns:evaluation")
@@ -263,9 +265,17 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
         translations.sort(key=lambda trans: trans[-1], reverse=True)
 
         if len(tree_data) > 0:
-            # make_graph(tree_data, translations, output_file_basename="trees/{0}".format(str(uuid.uuid4())), indexer=tgt_indexer)
             tree = build_resolution_tree(tree_data)
-            make_dot_graph(tree, translations=translations, output_file_basename="trees/{0}".format(str(uuid.uuid4())), indexer=tgt_indexer)
+            tree_id_base = str(uuid.uuid4())
+            start_time = timeit.default_timer()
+            workers = []
+            for trans_index in range(len(translations)):
+                worker = threading.Thread(target=lambda: make_dot_graph(tree, translations=translations, output_file_basename="trees/{0}-{1}".format(tree_id_base, trans_index), indexer=tgt_indexer, highlighted_trans=trans_index))
+                workers.append(worker)
+                worker.start()
+            for worker in workers:
+                worker.join()
+            log.info("All resolution trees generated in {0}".format(timeit.default_timer() - start_time))
 
         if nbest is not None:
             yield translations[:nbest]
