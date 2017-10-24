@@ -260,16 +260,17 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
                         src_node_id = "{0}-{1}".format(num_step - 1, nxt_trans[-2])
                         score = next_score_list[trans_index] if beam_score_coverage_penalty is not "google" else next_normalized_score_list[trans_index]
                         edges.append((src_node_id, node_id, score))
-        for fin_trans in [x for x in finished_translations if len(x[0]) == num_step]:
-            trans = fin_trans[0]
-            tgt_note_id = "{0}-EOS".format(num_step)
-            nodes.append(tgt_note_id)
-            src_node_id = "{0}-{1}".format(num_step-1, trans[-1])
-            score = fin_trans[1]
-            edge_id = "{0} -> {1}".format(src_node_id, tgt_note_id)
-            if edge_id not in created_edges:
-                edges.append((src_node_id, tgt_note_id, score))
-                created_edges.add(edge_id)
+        if num_step > 0:
+            for fin_trans in [x for x in finished_translations if len(x[0]) == num_step]:
+                trans = fin_trans[0]
+                tgt_note_id = "{0}-EOS".format(num_step)
+                nodes.append(tgt_note_id)
+                src_node_id = "{0}-{1}".format(num_step-1, trans[-1])
+                score = fin_trans[1]
+                edge_id = "{0} -> {1}".format(src_node_id, tgt_note_id)
+                if edge_id not in created_edges:
+                    edges.append((src_node_id, tgt_note_id, score))
+                    created_edges.add(edge_id)
         step_data = (nodes, edges)
         tree_data.append(step_data)
 
