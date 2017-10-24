@@ -56,7 +56,7 @@ class Translator:
 
         self.encdec_list = [self.encdec]
 
-    def translate(self, sentence, beam_width, beam_pruning_margin, beam_score_coverage_penalty, beam_score_coverage_penalty_strength, nb_steps, nb_steps_ratio,
+    def translate(self, article_id, sentence, beam_width, beam_pruning_margin, beam_score_coverage_penalty, beam_score_coverage_penalty_strength, nb_steps, nb_steps_ratio,
                   remove_unk, normalize_unicode_unk, attempt_to_relocate_unk_source, beam_score_length_normalization, beam_score_length_normalization_strength, post_score_length_normalization, post_score_length_normalization_strength,
                   post_score_coverage_penalty, post_score_coverage_penalty_strength,
                   groundhog, force_finish, prob_space_combination, attn_graph_width, attn_graph_height):
@@ -103,7 +103,9 @@ class Translator:
                                                rich_output_filename=rich_output_file.name,
                                                use_unfinished_translation_if_none_found=True,
                                                replace_unk=True, src=sentence, dic=self.config_server.output.dic,
-                                               remove_unk=remove_unk, normalize_unicode_unk=normalize_unicode_unk, attempt_to_relocate_unk_source=attempt_to_relocate_unk_source)
+                                               remove_unk=remove_unk, normalize_unicode_unk=normalize_unicode_unk, attempt_to_relocate_unk_source=attempt_to_relocate_unk_source,
+                                               tree_dir="/home/frederic/public_html/webmt-dev-rnnsearch/trees",
+                                               tree_fn_base=article_id)
 
             dest_file.seek(0)
             out = dest_file.read()
@@ -262,7 +264,7 @@ class RequestHandler(SocketServer.BaseRequestHandler):
 
                     log.info(timestamped_msg("Translating sentence %d" % idx))
                     decoded_sentence = splitted_sentence.decode('utf-8')
-                    translation, script, div, unk_mapping = self.server.translator.translate(decoded_sentence,
+                    translation, script, div, unk_mapping = self.server.translator.translate("{0}-{1}".format(article_id, sentence_number), decoded_sentence,
                                                                                              beam_width, beam_pruning_margin, beam_score_coverage_penalty, beam_score_coverage_penalty_strength, nb_steps, nb_steps_ratio, remove_unk, normalize_unicode_unk, attempt_to_relocate_unk_source,
                                                                                              beam_score_length_normalization, beam_score_length_normalization_strength, post_score_length_normalization, post_score_length_normalization_strength, post_score_coverage_penalty, post_score_coverage_penalty_strength,
                                                                                              groundhog, force_finish, prob_space_combination, attn_graph_width, attn_graph_height)

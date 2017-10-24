@@ -168,7 +168,8 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                           groundhog=False, force_finish=False,
                           prob_space_combination=False,
                           reverse_encdec=None, use_unfinished_translation_if_none_found=False,
-                          nbest=None, tgt_indexer=None, tree_data=None):
+                          nbest=None, tgt_indexer=None, 
+                          tree_data=None, tree_dir="trees", tree_fn_base=str(uuid.uuid4())):
     nb_ex = len(src_data)
     for num_ex in range(nb_ex):
         src_batch, src_mask = make_batch_src([src_data[num_ex]], gpu=gpu)
@@ -266,11 +267,11 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
 
         if len(tree_data) > 0:
             tree = build_resolution_tree(tree_data)
-            tree_id_base = str(uuid.uuid4())
             start_time = timeit.default_timer()
             workers = []
-            for trans_index in range(len(translations)):
-                worker = threading.Thread(target=lambda: make_dot_graph(tree, translations=translations, output_file_basename="trees/{0}-{1}".format(tree_id_base, trans_index), indexer=tgt_indexer, highlighted_trans=trans_index))
+            # for trans_index in range(len(translations)):
+            for trans_index in range(1):
+                worker = threading.Thread(target=lambda: make_dot_graph(tree, translations=translations, output_file_basename="{0}/{1}-{2}".format(tree_dir, tree_fn_base, trans_index), indexer=tgt_indexer, highlighted_trans=trans_index))
                 workers.append(worker)
                 worker.start()
             for worker in workers:

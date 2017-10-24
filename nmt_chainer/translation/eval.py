@@ -35,6 +35,7 @@ import logging
 import codecs
 # import h5py
 import bokeh.embed
+import uuid
 
 
 logging.basicConfig()
@@ -127,7 +128,9 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
                     normalize_unicode_unk=False,
                     attempt_to_relocate_unk_source=False,
                     nbest=None,
-                    tree_data=None):
+                    tree_data=None,
+                    tree_dir="trees",
+                    tree_fn_base=str(uuid.uuid4())):
 
     log.info("starting beam search translation of %i sentences" % len(src_data))
     if isinstance(encdec, (list, tuple)) and len(encdec) > 1:
@@ -153,7 +156,9 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
             use_unfinished_translation_if_none_found=use_unfinished_translation_if_none_found,
             nbest=nbest,
             tgt_indexer=tgt_indexer,
-            tree_data=tree_data)
+            tree_data=tree_data,
+            tree_dir=tree_dir,
+            tree_fn_base=tree_fn_base)
 
         log.info("end of beam search")
         for num_t, translations in enumerate(translations_gen):
@@ -219,7 +224,9 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
                                        normalize_unicode_unk=False,
                                        attempt_to_relocate_unk_source=False,
                                        unprocessed_output_filename=None,
-                                       nbest=None):
+                                       nbest=None,
+                                       tree_dir="trees",
+                                       tree_fn_base=str(uuid.uuid4())):
 
     tree_data = []
 
@@ -240,7 +247,9 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
                                            normalize_unicode_unk=normalize_unicode_unk,
                                            attempt_to_relocate_unk_source=attempt_to_relocate_unk_source,
                                            nbest=nbest,
-                                           tree_data=tree_data)
+                                           tree_data=tree_data, 
+                                           tree_dir=tree_dir,
+                                           tree_fn_base=tree_fn_base)
 
     attn_vis = None
     if generate_attention_html is not None:

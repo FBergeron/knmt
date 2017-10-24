@@ -492,7 +492,7 @@ def make_dot_graph_rec(g, tree, translations, highlighted_trans_index, highlight
                 highlighted_edge_found = True
 
             edge_id = "{0} -> {1} ({2})".format(src_node_id, tgt_node_id, score)
-            log.info("edge_id={0}".format(edge_id))
+            # log.info("edge_id={0}".format(edge_id))
             if edge_id not in created_edges: 
                 g.edge(src_node_id, tgt_node_id, str(score), penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
                 created_edges.add(edge_id)
