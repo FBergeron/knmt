@@ -497,7 +497,7 @@ def ensemble_beam_search(model_ensemble, src_batch, src_mask, nb_steps, eos_idx,
                 prob_space_combination=prob_space_combination,
                 num_step=num_step)
    
-            log.info("finished_translations={0}".format([x[0] for x in finished_translations]))
+            # log.info("finished_translations={0}".format([x[0] for x in finished_translations]))
             # log.info("current_translations_states={0}".format([x[0] for x in current_translations_states]))
 
             if current_translations_states is None:
@@ -510,7 +510,7 @@ def ensemble_beam_search(model_ensemble, src_batch, src_mask, nb_steps, eos_idx,
             if use_unfinished_translation_if_none_found:
                 assert current_translations_states is not None
                 if need_attention:
-                    translations, scores, _, _, attentions = current_translations_states
+                    translations, scores, _, _, attentions, tree_data = current_translations_states
                     finished_translations.append(
                         (translations[0], scores[0], attentions[0]))
                 else:

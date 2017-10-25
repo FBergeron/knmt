@@ -562,7 +562,9 @@ def do_eval(config_eval):
                                                rich_output_filename=rich_output_filename,
                                                use_unfinished_translation_if_none_found=True,
                                                unprocessed_output_filename=dest_fn + ".unprocessed",
-                                               nbest=nbest)
+                                               nbest=nbest,
+                                               tree_dir=config_eval.process.resolution_tree_dir,
+                                               tree_fn_base=dest_fn + "_$num_ex" if config_eval.process.resolution_tree_fn_base is None else config_eval.process.resolution_tree_fn_base + "_$num_ex")
 
             translation_infos["dest"] = dest_fn
             translation_infos["unprocessed"] = dest_fn + ".unprocessed"
