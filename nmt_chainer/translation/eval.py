@@ -564,7 +564,7 @@ def do_eval(config_eval):
                                                unprocessed_output_filename=dest_fn + ".unprocessed",
                                                nbest=nbest,
                                                tree_dir=config_eval.process.resolution_tree_dir,
-                                               tree_fn_base=dest_fn + "_$num_ex" if config_eval.process.resolution_tree_fn_base is None else config_eval.process.resolution_tree_fn_base + "_$num_ex")
+                                               tree_fn_base=os.path.splitext(os.path.basename(dest_fn))[0] + "_$num_ex" if config_eval.process.resolution_tree_fn_base is None else config_eval.process.resolution_tree_fn_base + "_$num_ex")
 
             translation_infos["dest"] = dest_fn
             translation_infos["unprocessed"] = dest_fn + ".unprocessed"
