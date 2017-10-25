@@ -129,7 +129,7 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
                     attempt_to_relocate_unk_source=False,
                     nbest=None,
                     tree_data=None,
-                    tree_dir="trees",
+                    tree_dir=None,
                     tree_fn_base=str(uuid.uuid4())):
 
     log.info("starting beam search translation of %i sentences" % len(src_data))
@@ -225,10 +225,10 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
                                        attempt_to_relocate_unk_source=False,
                                        unprocessed_output_filename=None,
                                        nbest=None,
-                                       tree_dir="trees",
+                                       tree_dir=None,
                                        tree_fn_base=str(uuid.uuid4())):
 
-    tree_data = []
+    tree_data = None if tree_dir is None else []
 
     log.info("writing translation to %s " % dest_fn)
     out = codecs.open(dest_fn, "w", encoding="utf8")

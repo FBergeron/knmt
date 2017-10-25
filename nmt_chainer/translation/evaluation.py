@@ -169,7 +169,7 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                           prob_space_combination=False,
                           reverse_encdec=None, use_unfinished_translation_if_none_found=False,
                           nbest=None, tgt_indexer=None, 
-                          tree_data=None, tree_dir="trees", tree_fn_base=str(uuid.uuid4())):
+                          tree_data=None, tree_dir=None, tree_fn_base=str(uuid.uuid4())):
     nb_ex = len(src_data)
     for num_ex in range(nb_ex):
         src_batch, src_mask = make_batch_src([src_data[num_ex]], gpu=gpu)
@@ -265,7 +265,7 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
         translations = map(lambda trans: trans + (ranking_criterion(trans),), translations)
         translations.sort(key=lambda trans: trans[-1], reverse=True)
 
-        if len(tree_data) > 0:
+        if tree_dir is not None and tree_fn_base is not None and len(tree_data) > 0:
             tree = build_resolution_tree(tree_data)
             start_time = timeit.default_timer()
             workers = []

@@ -104,7 +104,7 @@ class Translator:
                                                use_unfinished_translation_if_none_found=True,
                                                replace_unk=True, src=sentence, dic=self.config_server.output.dic,
                                                remove_unk=remove_unk, normalize_unicode_unk=normalize_unicode_unk, attempt_to_relocate_unk_source=attempt_to_relocate_unk_source,
-                                               tree_dir="/home/frederic/public_html/webmt-dev-rnnsearch/trees",
+                                               tree_dir=self.config_server.process.resolution_tree_dir,
                                                tree_fn_base=article_id)
 
             dest_file.seek(0)

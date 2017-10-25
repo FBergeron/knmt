@@ -7,7 +7,7 @@ LANG_SRC=en
 LANG_DST=ja
 HOST=localhost
 PORT=44668
-
+RESOLUTION_TREE_DIR=/var/www/webmt/trees
 
 #
 # RNN-Search
