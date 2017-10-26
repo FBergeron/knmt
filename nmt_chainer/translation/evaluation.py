@@ -25,7 +25,6 @@ logging.basicConfig()
 log = logging.getLogger("rnns:evaluation")
 log.setLevel(logging.INFO)
 
-
 def translate_to_file(encdec, eos_idx, test_src_data, mb_size, tgt_indexer,
                       translations_fn, test_references=None, control_src_fn=None, src_indexer=None, gpu=None, nb_steps=50,
                       reverse_src=False, reverse_tgt=False,
@@ -272,7 +271,9 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
             workers = []
             trans_range = range(min(tree_nbest, len(translations))) if tree_nbest is not None else range(1) 
             for trans_index in trans_range:
-                worker = threading.Thread(target=lambda: make_dot_graph(tree, translations=translations, output_file_basename="{0}/{1}-{2}".format(tree_dir, expanded_tree_fn_base, str(trans_index).zfill(3)), indexer=tgt_indexer, highlighted_trans=trans_index))
+                def make_target(index):
+                    return lambda: make_dot_graph(tree, translations=translations, output_file_basename="{0}/{1}-{2}".format(tree_dir, expanded_tree_fn_base, str(index).zfill(3)), indexer=tgt_indexer, highlighted_trans=index)
+                worker = threading.Thread(name="tree-builder-{0}".format(trans_index), target=make_target(trans_index))
                 workers.append(worker)
                 worker.start()
             for worker in workers:
