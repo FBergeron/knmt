@@ -270,8 +270,9 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
             tree = build_resolution_tree(tree_data)
             start_time = timeit.default_timer()
             workers = []
-            # for trans_index in range(len(translations)):
-            for trans_index in range(1):
+            log.info("len(trans)={0}".format(len(translations)))
+            for trans_index in range(len(translations)):
+            # for trans_index in range(1):
                 worker = threading.Thread(target=lambda: make_dot_graph(tree, translations=translations, output_file_basename="{0}/{1}-{2}".format(tree_dir, expanded_tree_fn_base, trans_index), indexer=tgt_indexer, highlighted_trans=trans_index))
                 workers.append(worker)
                 worker.start()

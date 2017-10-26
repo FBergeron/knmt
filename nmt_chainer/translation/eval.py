@@ -266,7 +266,7 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
 
     for idx, translations in enumerate(translation_iterator):
         for src, translated, t, score, attn, unk_mapping, normalized_score in translations:
-            log.info("translated={0}".format(translated))
+            # log.info("translated={0}".format(translated))
             if rich_output is not None:
                 rich_output.add_info(src, translated, t, score, attn, unk_mapping=unk_mapping)
             if attn_vis is not None:
@@ -277,7 +277,7 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
                     attn_graph_with_sum,
                     attn_graph_attribs)
             ct = tgt_indexer.deconvert_post(translated)
-            log.info("ct={0}".format(ct))
+            # log.info("ct={0}".format(ct))
             if nbest is not None:
                 out.write("{0} ||| {1}\n".format(idx, ct))
             else:

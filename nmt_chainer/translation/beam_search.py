@@ -480,7 +480,7 @@ def ensemble_beam_search(model_ensemble, src_batch, src_mask, nb_steps, eos_idx,
     
         # Proceed with the search
         for num_step in xrange(nb_steps):
-            log.info("num_step={0}".format(num_step))
+            # log.info("num_step={0}".format(num_step))
             current_translations_states = advance_one_step(
                 dec_cell_ensemble,
                 eos_idx,
