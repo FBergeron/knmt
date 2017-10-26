@@ -266,13 +266,13 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
         translations.sort(key=lambda trans: trans[-1], reverse=True)
 
         if tree_dir is not None and tree_fn_base is not None and len(tree_data) > 0:
-            expanded_tree_fn_base = tree_fn_base.replace("$num_ex", str(num_ex))
+            expanded_tree_fn_base = tree_fn_base.replace("$num_ex", str(num_ex).zfill(3))
             tree = build_resolution_tree(tree_data)
             start_time = timeit.default_timer()
             workers = []
             trans_range = range(min(tree_nbest, len(translations))) if tree_nbest is not None else range(1) 
             for trans_index in trans_range:
-                worker = threading.Thread(target=lambda: make_dot_graph(tree, translations=translations, output_file_basename="{0}/{1}-{2}".format(tree_dir, expanded_tree_fn_base, trans_index), indexer=tgt_indexer, highlighted_trans=trans_index))
+                worker = threading.Thread(target=lambda: make_dot_graph(tree, translations=translations, output_file_basename="{0}/{1}-{2}".format(tree_dir, expanded_tree_fn_base, str(trans_index).zfill(3)), indexer=tgt_indexer, highlighted_trans=trans_index))
                 workers.append(worker)
                 worker.start()
             for worker in workers:

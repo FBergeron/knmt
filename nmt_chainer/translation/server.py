@@ -264,7 +264,7 @@ class RequestHandler(SocketServer.BaseRequestHandler):
 
                     log.info(timestamped_msg("Translating sentence %d" % idx))
                     decoded_sentence = splitted_sentence.decode('utf-8')
-                    translation, script, div, unk_mapping = self.server.translator.translate("{0}-{1}".format(article_id, sentence_number), decoded_sentence,
+                    translation, script, div, unk_mapping = self.server.translator.translate("{0}-{1}".format(article_id, sentence_number.zfill(3)), decoded_sentence,
                                                                                              beam_width, beam_pruning_margin, beam_score_coverage_penalty, beam_score_coverage_penalty_strength, nb_steps, nb_steps_ratio, remove_unk, normalize_unicode_unk, attempt_to_relocate_unk_source,
                                                                                              beam_score_length_normalization, beam_score_length_normalization_strength, post_score_length_normalization, post_score_length_normalization_strength, post_score_coverage_penalty, post_score_coverage_penalty_strength,
                                                                                              groundhog, force_finish, prob_space_combination, attn_graph_width, attn_graph_height)
