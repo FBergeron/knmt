@@ -169,7 +169,7 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                           prob_space_combination=False,
                           reverse_encdec=None, use_unfinished_translation_if_none_found=False,
                           nbest=None, tgt_indexer=None, 
-                          tree_data=None, tree_dir=None, tree_fn_base=str(uuid.uuid4())):
+                          tree_data=None, tree_dir=None, tree_fn_base=str(uuid.uuid4()), tree_nbest=None):
     nb_ex = len(src_data)
     for num_ex in range(nb_ex):
         src_batch, src_mask = make_batch_src([src_data[num_ex]], gpu=gpu)
@@ -270,9 +270,8 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
             tree = build_resolution_tree(tree_data)
             start_time = timeit.default_timer()
             workers = []
-            log.info("len(trans)={0}".format(len(translations)))
-            for trans_index in range(len(translations)):
-            # for trans_index in range(1):
+            trans_range = range(min(tree_nbest, len(translations))) if tree_nbest is not None else range(1) 
+            for trans_index in trans_range:
                 worker = threading.Thread(target=lambda: make_dot_graph(tree, translations=translations, output_file_basename="{0}/{1}-{2}".format(tree_dir, expanded_tree_fn_base, trans_index), indexer=tgt_indexer, highlighted_trans=trans_index))
                 workers.append(worker)
                 worker.start()

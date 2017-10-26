@@ -130,7 +130,8 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
                     nbest=None,
                     tree_data=None,
                     tree_dir=None,
-                    tree_fn_base=str(uuid.uuid4())):
+                    tree_fn_base=str(uuid.uuid4()),
+                    tree_nbest=None):
 
     log.info("starting beam search translation of %i sentences" % len(src_data))
     if isinstance(encdec, (list, tuple)) and len(encdec) > 1:
@@ -158,7 +159,8 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
             tgt_indexer=tgt_indexer,
             tree_data=tree_data,
             tree_dir=tree_dir,
-            tree_fn_base=tree_fn_base)
+            tree_fn_base=tree_fn_base,
+            tree_nbest=tree_nbest)
 
         log.info("end of beam search")
         for num_t, translations in enumerate(translations_gen):
@@ -226,7 +228,8 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
                                        unprocessed_output_filename=None,
                                        nbest=None,
                                        tree_dir=None,
-                                       tree_fn_base=str(uuid.uuid4())):
+                                       tree_fn_base=str(uuid.uuid4()),
+                                       tree_nbest=None):
 
     tree_data = None if tree_dir is None else []
 
@@ -249,7 +252,8 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
                                            nbest=nbest,
                                            tree_data=tree_data, 
                                            tree_dir=tree_dir,
-                                           tree_fn_base=tree_fn_base)
+                                           tree_fn_base=tree_fn_base,
+                                           tree_nbest=tree_nbest)
 
     attn_vis = None
     if generate_attention_html is not None:
@@ -564,7 +568,8 @@ def do_eval(config_eval):
                                                unprocessed_output_filename=dest_fn + ".unprocessed",
                                                nbest=nbest,
                                                tree_dir=config_eval.process.resolution_tree_dir,
-                                               tree_fn_base=os.path.splitext(os.path.basename(dest_fn))[0] + "_$num_ex" if config_eval.process.resolution_tree_fn_base is None else config_eval.process.resolution_tree_fn_base + "_$num_ex")
+                                               tree_fn_base=os.path.splitext(os.path.basename(dest_fn))[0] + "_$num_ex" if config_eval.process.resolution_tree_fn_base is None else config_eval.process.resolution_tree_fn_base + "_$num_ex",
+                                               tree_nbest=config_eval.process.resolution_tree_nbest)
 
             translation_infos["dest"] = dest_fn
             translation_infos["unprocessed"] = dest_fn + ".unprocessed"
