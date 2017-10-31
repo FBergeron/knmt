@@ -59,7 +59,7 @@ class Translator:
     def translate(self, article_id, sentence, beam_width, beam_pruning_margin, beam_score_coverage_penalty, beam_score_coverage_penalty_strength, nb_steps, nb_steps_ratio,
                   remove_unk, normalize_unicode_unk, attempt_to_relocate_unk_source, beam_score_length_normalization, beam_score_length_normalization_strength, post_score_length_normalization, post_score_length_normalization_strength,
                   post_score_coverage_penalty, post_score_coverage_penalty_strength,
-                  groundhog, force_finish, prob_space_combination, attn_graph_width, attn_graph_height):
+                  groundhog, force_finish, prob_space_combination, attn_graph_width, attn_graph_height, tree_nbest):
         from nmt_chainer.utilities import visualisation
         log.info("processing source string %s" % sentence)
 
@@ -105,7 +105,8 @@ class Translator:
                                                replace_unk=True, src=sentence, dic=self.config_server.output.dic,
                                                remove_unk=remove_unk, normalize_unicode_unk=normalize_unicode_unk, attempt_to_relocate_unk_source=attempt_to_relocate_unk_source,
                                                tree_dir=self.config_server.process.resolution_tree_dir,
-                                               tree_fn_base=article_id)
+                                               tree_fn_base=article_id,
+                                               tree_nbest=tree_nbest)
 
             dest_file.seek(0)
             out = dest_file.read()
@@ -208,6 +209,13 @@ class RequestHandler(SocketServer.BaseRequestHandler):
                 log.info('normalize_unicode_unk=' + str(normalize_unicode_unk))
                 attempt_to_relocate_unk_source = ('true' == root.get(
                     'attempt_to_relocate_unk_source', 'false'))
+                generate_nbest_trees = root.get('generate_nbest_trees', None)
+                try:
+                    if generate_nbest_trees is not None:
+                        generate_nbest_trees = int(generate_nbest_trees)
+                except BaseException:
+                    pass
+
                 log.info("Article id: %s" % article_id)
                 out = ""
                 graph_data = []
@@ -267,7 +275,7 @@ class RequestHandler(SocketServer.BaseRequestHandler):
                     translation, script, div, unk_mapping = self.server.translator.translate("{0}-{1}".format(article_id, sentence_number.zfill(3)), decoded_sentence,
                                                                                              beam_width, beam_pruning_margin, beam_score_coverage_penalty, beam_score_coverage_penalty_strength, nb_steps, nb_steps_ratio, remove_unk, normalize_unicode_unk, attempt_to_relocate_unk_source,
                                                                                              beam_score_length_normalization, beam_score_length_normalization_strength, post_score_length_normalization, post_score_length_normalization_strength, post_score_coverage_penalty, post_score_coverage_penalty_strength,
-                                                                                             groundhog, force_finish, prob_space_combination, attn_graph_width, attn_graph_height)
+                                                                                             groundhog, force_finish, prob_space_combination, attn_graph_width, attn_graph_height, generate_nbest_trees)
                     out += translation
 
                     if self.server.pp_command is not None:
