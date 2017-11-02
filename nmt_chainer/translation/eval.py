@@ -20,7 +20,7 @@ from nmt_chainer.utilities.file_infos import create_filename_infos
 from nmt_chainer.utilities.argument_parsing_tools import OrderedNamespace
 import time
 import os.path
-from nmt_chainer.utilities.utils import ensure_path, make_graph
+from nmt_chainer.utilities.utils import ensure_path
 # from utils import make_batch_src, make_batch_src_tgt, minibatch_provider, compute_bleu_with_unk_as_wrong, de_batch
 from nmt_chainer.translation.evaluation import (greedy_batch_translate,
                                                 #                         convert_idx_to_string,
@@ -283,7 +283,7 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
             ct = tgt_indexer.deconvert_post(translated)
             # log.info("ct={0}".format(ct))
             if nbest is not None:
-                out.write("{0} ||| {1}\n".format(idx, ct))
+                out.write("{0} ||| {1} ||| {2} ||| {3}\n".format(idx, ct, score, normalized_score))
             else:
                 out.write(ct + "\n")
             if unprocessed_output is not None:

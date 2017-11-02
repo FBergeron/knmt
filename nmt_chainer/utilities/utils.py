@@ -498,64 +498,6 @@ def make_dot_graph_rec(g, tree, translations, highlighted_trans_index, highlight
                 created_edges.add(edge_id)
                 make_dot_graph_rec(g, child_node, translations, highlighted_trans_index, highlighted_trans_color, highlighted_trans_width, indexer, created_edges)
 
-# Deprecated: Better use make_dot_graph() instead.  
-def make_graph(data, translations, format="svg", output_file_basename=None, indexer=None):
-    created_edges = set()
-    best_src_node_id = None
-    best_tgt_node_id = None
-    g = gv.Digraph(format=format)
-    for index, step_data in list(enumerate(data)):
-        nodes, edges = step_data
-        edges.sort(key=operator.itemgetter(2), reverse=True)
-        best_tgt_node_id = None
-        #for node_id in sorted(set(nodes), key=lambda node: node.split("-")[1], reverse=True):
-        for node_id in set(nodes):
-            node_num_step, node_word = node_id.split("-")
-
-            node_color = "black"
-            node_width = 1
-            node_shape = "ellipse"
-            node_label = node_id
-
-            if node_word == "SOS":
-                node_color = "red"
-                node_width = 5
-                node_shape = "diamond"
-            elif node_word == "EOS":
-                node_shape = "square"
-                if len(translations[0][2]) == index:
-                    node_color = "red"
-                    node_width = 5
-                    best_src_node_id = "{0}-{1}".format(index-1, translations[0][2][-1])
-                    best_tgt_node_id = node_id
-            elif indexer is not None:
-                node_label = "{0}={1}".format(node_id, indexer.deconvert_swallow([int(node_word)])[0])
-                # node_label = indexer.deconvert_swallow([int(node_word)])[0]
-                if int(node_word) in map(lambda x: x[2][index] if index < len(x[2]) else None, translations):
-                    best_src_node_id = "X-SOS" if index == 0 else "{0}-{1}".format(index-1, translations[0][2][index-1])
-                    best_tgt_node_id = node_id
-                    node_color = "red"
-                    node_width = 5
-
-            g.node(node_id, node_label, color=node_color, penwidth=str(node_width), shape=node_shape)
-
-        best_edge_found = False
-        for src_node, tgt_node, score in edges:
-            edge_color = "black"
-            edge_width = 1
-            edge_weight = 1
-            
-            if not best_edge_found and src_node == best_src_node_id and tgt_node == best_tgt_node_id:
-                best_edge_found = True
-                edge_color = "red"
-                edge_width = 5
-                edge_weight = 100
-
-            g.edge(str(src_node), str(tgt_node), str(score), penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
-
-    g.render(output_file_basename)  
-
-
 class Tree(object):
 
     def __init__(self, data):
