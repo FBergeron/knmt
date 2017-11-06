@@ -445,7 +445,7 @@ def make_dot_graph_rec(g, tree, translations, highlighted_trans_index, highlight
         if len(highlighted_trans) == int(node_num_step):
             node_color = highlighted_trans_color
             node_width = highlighted_trans_width
-        for match_trans in sorted([trans for trans in translations if len(trans[0]) == int(node_num_step) - 1], key=lambda trans: trans[3], reverse=True): 
+        for match_trans in sorted([trans for trans in translations if len(trans[0]) == int(node_num_step)], key=lambda trans: trans[3], reverse=True): 
             _, match_trans_score, _, match_trans_norm_score = match_trans
             # The string conversion prevents a ValueError.
             if str(match_trans_score) != str(match_trans_norm_score):
