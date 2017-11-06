@@ -267,7 +267,7 @@ def compute_next_lists(new_state_ensemble, new_scores, beam_width, beam_pruning_
                 nodes.append(tgt_note_id)
                 src_node_id = "{0}-{1}".format(num_step-1, trans[-1])
                 score = fin_trans[1]
-                edge_id = "{0} -> {1}".format(src_node_id, tgt_note_id)
+                edge_id = "{0} -> {1} : {2}".format(src_node_id, tgt_note_id, score)
                 if edge_id not in created_edges:
                     edges.append((src_node_id, tgt_note_id, score))
                     created_edges.add(edge_id)
