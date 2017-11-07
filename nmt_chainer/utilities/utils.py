@@ -482,6 +482,7 @@ def make_dot_graph_rec(g, tree, translations, highlighted_trans_index, highlight
             edge_color = "black"
             edge_width = 1
             edge_weight = 1
+            edge_label = str(score)
 
             if not best_edge_found and src_node_id == best_src_node_id and tgt_node_id == best_tgt_node_id:
                 edge_weight = 100
@@ -490,11 +491,12 @@ def make_dot_graph_rec(g, tree, translations, highlighted_trans_index, highlight
                 edge_color = highlighted_trans_color
                 edge_width = highlighted_trans_width
                 highlighted_edge_found = True
+                edge_label = '<<u>{0}</u>>'.format(edge_label)
 
             edge_id = "{0} -> {1} ({2})".format(src_node_id, tgt_node_id, score)
             # log.info("edge_id={0}".format(edge_id))
             if edge_id not in created_edges: 
-                g.edge(src_node_id, tgt_node_id, str(score), penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
+                g.edge(src_node_id, tgt_node_id, edge_label, penwidth=str(edge_width), color=edge_color, weight=str(edge_weight))
                 created_edges.add(edge_id)
                 make_dot_graph_rec(g, child_node, translations, highlighted_trans_index, highlighted_trans_color, highlighted_trans_width, indexer, created_edges)
 
