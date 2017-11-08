@@ -166,7 +166,7 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
         for num_t, translations in enumerate(translations_gen):
             res_trans = []
             for trans in translations:
-                (t, score, attn, normalized_score) = trans
+                (t, score, score_list, attn, normalized_score) = trans
                 if num_t % 200 == 0:
                     print >>sys.stderr, num_t,
                 elif num_t % 40 == 0:

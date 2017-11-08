@@ -413,10 +413,10 @@ def make_dot_graph(tree, format="svg", translations=None, output_file_basename=N
 
 def make_dot_graph_rec(g, tree, translations, highlighted_trans_index, highlighted_trans_color, highlighted_trans_width, indexer, created_edges):
     best_translation = translations[0]
-    best_trans, best_trans_score, best_trans_attn, best_trans_norm_score = best_translation
+    best_trans, best_trans_score, best_trans_score_list, best_trans_attn, best_trans_norm_score = best_translation
 
     highlighted_translation = translations[highlighted_trans_index]
-    highlighted_trans, highlighted_trans_score, highlighted_trans_attn, highlighted_trans_norm_score = highlighted_translation
+    highlighted_trans, highlighted_trans_score, highlighted_trans_score_list, highlighted_trans_attn, highlighted_trans_norm_score = highlighted_translation
 
     node_num_step, node_word = tree.data
     node_id = "{0}-{1}".format(node_num_step, node_word)
@@ -445,12 +445,15 @@ def make_dot_graph_rec(g, tree, translations, highlighted_trans_index, highlight
         if len(highlighted_trans) == int(node_num_step):
             node_color = highlighted_trans_color
             node_width = highlighted_trans_width
-        for match_trans in sorted([trans for trans in translations if len(trans[0]) == int(node_num_step)], key=lambda trans: trans[3], reverse=True): 
-            _, match_trans_score, _, match_trans_norm_score = match_trans
+        for match_trans in sorted([trans for trans in translations if len(trans[0]) == int(node_num_step)], key=lambda trans: trans[4], reverse=True): 
+            _, match_trans_score, match_trans_score_list, _, match_trans_norm_score = match_trans
             # The string conversion prevents a ValueError.
             if str(match_trans_score) != str(match_trans_norm_score):
-                node_label += "\n{0}".format(match_trans_norm_score)
-    elif indexer is not None:
+                score_str = match_trans_norm_score
+                if np.isclose(match_trans_norm_score, highlighted_trans_norm_score):
+                    score_str = "<u>{0}</u>".format(score_str)
+                node_label += "<br/>{0}".format(score_str)
+    else:
         int_node_num_step = int(node_num_step)
         if int_node_num_step < len(best_trans) and int(node_word) == best_trans[int_node_num_step]:
             best_src_node_id = node_id
@@ -459,14 +462,14 @@ def make_dot_graph_rec(g, tree, translations, highlighted_trans_index, highlight
             highlighted_src_node_id = node_id
             highlighted_tgt_node_id = "{0}-{1}".format(int_node_num_step+1, highlighted_trans[int_node_num_step+1]) if int_node_num_step < len(highlighted_trans) -1 else "{0}-EOS".format(int_node_num_step+1) 
 
-        node_label = "{0}={1}".format(node_id, indexer.deconvert_swallow([int(node_word)])[0])
+        node_label = "{0}={1}".format(node_id, indexer.deconvert_swallow([int(node_word)])[0]) if indexer is not None else "{0}={1}".format(node_id, node_word)
         # node_label = indexer.deconvert_swallow([int(node_word)])[0]
 
         if node_id == highlighted_src_node_id:
             node_color = highlighted_trans_color
             node_width = highlighted_trans_width
     
-    g.node(node_id, node_label, color=node_color, penwidth=str(node_width), shape=node_shape)
+    g.node(node_id, "<{0}>".format(node_label), color=node_color, penwidth=str(node_width), shape=node_shape)
 
     if tree.children is not None:
         best_edge_found = False
@@ -485,13 +488,18 @@ def make_dot_graph_rec(g, tree, translations, highlighted_trans_index, highlight
             edge_label = str(score)
 
             if not best_edge_found and src_node_id == best_src_node_id and tgt_node_id == best_tgt_node_id:
-                edge_weight = 100
-                best_edge_found = True
+                score_index = 0 if node_num_step == "X" else int(node_num_step) + 1
+                if score_index < len(best_trans_score_list) and np.isclose(score, best_trans_score_list[score_index]):
+                    edge_weight = 100
+                    best_edge_found = True
+            
             if not highlighted_edge_found and src_node_id == highlighted_src_node_id and tgt_node_id == highlighted_tgt_node_id:
-                edge_color = highlighted_trans_color
-                edge_width = highlighted_trans_width
-                highlighted_edge_found = True
-                edge_label = '<<u>{0}</u>>'.format(edge_label)
+                score_index = 0 if node_num_step == "X" else int(node_num_step) + 1
+                if score_index < len(highlighted_trans_score_list) and np.isclose(score, highlighted_trans_score_list[score_index]):
+                    edge_color = highlighted_trans_color
+                    edge_width = highlighted_trans_width
+                    highlighted_edge_found = True
+                    edge_label = '<<u>{0}</u>>'.format(edge_label)
 
             edge_id = "{0} -> {1} ({2})".format(src_node_id, tgt_node_id, score)
             # log.info("edge_id={0}".format(edge_id))
