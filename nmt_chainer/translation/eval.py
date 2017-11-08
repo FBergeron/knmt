@@ -189,7 +189,7 @@ def beam_search_all(gpu, encdec, eos_idx, src_data, beam_width, beam_pruning_mar
                     assert False
 
                 translated = tgt_indexer.deconvert_swallow(t, unk_tag=unk_replacer)
-                log.info("t={0} translated={1}".format(t, translated))
+                # log.info("t={0} translated={1}".format(t, translated))
 
                 unk_mapping = []
                 ct = " ".join(translated)

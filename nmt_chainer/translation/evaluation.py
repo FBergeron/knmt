@@ -230,19 +230,19 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
 
                 coverage_penalty = 0
                 if post_score_coverage_penalty == 'google':
-                    assert len(src_data[num_ex]) == x[2][0].shape[0]
+                    assert len(src_data[num_ex]) == x[3][0].shape[0]
 
-                    # log.info("sum={0}".format(sum(x[2])))
-                    # log.info("min={0}".format(xp.minimum(sum(x[2]), xp.array(1.0))))
-                    # log.info("log={0}".format(xp.log(xp.minimum(sum(x[2]), xp.array(1.0)))))
-                    log_of_min_of_sum_over_j = xp.log(xp.minimum(sum(x[2]), xp.array(1.0)))
+                    # log.info("sum={0}".format(sum(x[3])))
+                    # log.info("min={0}".format(xp.minimum(sum(x[3]), xp.array(1.0))))
+                    # log.info("log={0}".format(xp.log(xp.minimum(sum(x[3]), xp.array(1.0)))))
+                    log_of_min_of_sum_over_j = xp.log(xp.minimum(sum(x[3]), xp.array(1.0)))
                     coverage_penalty = post_score_coverage_penalty_strength * xp.sum(log_of_min_of_sum_over_j)
                     # log.info("cp={0}".format(coverage_penalty))
                     # cp = 0
                     # for i in xrange(len(src_data[num_ex])):
                     #    attn_sum = 0
                     #    for j in xrange(len(x[0])):
-                    #        attn_sum += x[2][j][i]
+                    #        attn_sum += x[3][j][i]
                     #    #log.info("attn_sum={0}".format(attn_sum))
                     #    #log.info("min={0}".format(min(attn_sum, 1.0)))
                     #    #log.info("log={0}".format(math.log(min(attn_sum, 1.0))))

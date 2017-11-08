@@ -105,8 +105,9 @@ def update_next_lists(num_case, idx_in_case, new_cost, eos_idx, new_state_ensemb
                                           ))
         else:
             finished_translations.append((current_translations[num_case],
-                                          current_score_lists[num_case] + [-new_cost],  
-                                          -new_cost))
+                                          -new_cost,
+                                          current_score_lists[num_case] + [-new_cost]
+                                          ))
     else:
         next_states_list.append(
             [tuple([Variable(substates.data[num_case].reshape(1, -1)) for substates in new_state])
@@ -382,7 +383,6 @@ def advance_one_step(dec_cell_ensemble, eos_idx, current_translations_states, be
     current_translations, current_scores, current_states_ensemble, current_words, current_attentions, tree_data, current_score_lists = current_translations_states
 
 
-    log.info("current_translations={0} current_scores={1} current_score_lists={2}".format(current_translations, current_scores, current_score_lists))
     # Compute the next states and associated next word scores
     combined_scores, new_state_ensemble, attn_ensemble = compute_next_states_and_scores(
         dec_cell_ensemble, current_states_ensemble, current_words,
@@ -524,14 +524,14 @@ def ensemble_beam_search(model_ensemble, src_batch, src_mask, nb_steps, eos_idx,
             if use_unfinished_translation_if_none_found:
                 assert current_translations_states is not None
                 if need_attention:
-                    translations, scores, _, _, attentions, tree_data = current_translations_states
+                    translations, scores, _, _, attentions, tree_data, score_list = current_translations_states
                     finished_translations.append(
-                        (translations[0], scores[0], attentions[0]))
+                        (translations[0], scores[0], score_list[0], attentions[0]))
                 else:
-                    finished_translations.append((translations[0], scores[0]))
+                    finished_translations.append((translations[0], scores[0], score_list[0]))
             else:
                 if need_attention:
-                    finished_translations.append(([], 0, []))
+                    finished_translations.append(([], 0, [], []))
                 else:
-                    finished_translations.append(([], 0))
+                    finished_translations.append(([], 0, []))
         return finished_translations
