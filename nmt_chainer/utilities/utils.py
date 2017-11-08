@@ -401,6 +401,11 @@ def minibatch_sampling(probs):
 #
 #     return encdec, eos_idx, src_indexer, tgt_indexer
 
+def escape_dot_label(str):
+    str = str.replace("<", "&lt;")
+    str = str.replace(">", "&gt;")
+    return str
+
 def make_dot_graph(tree, format="svg", translations=None, output_file_basename=None, indexer=None, highlighted_trans=0, highlighted_trans_color="red", highlighted_trans_width=5):
     g = gv.Digraph(format=format)
 
@@ -462,7 +467,7 @@ def make_dot_graph_rec(g, tree, translations, highlighted_trans_index, highlight
             highlighted_src_node_id = node_id
             highlighted_tgt_node_id = "{0}-{1}".format(int_node_num_step+1, highlighted_trans[int_node_num_step+1]) if int_node_num_step < len(highlighted_trans) -1 else "{0}-EOS".format(int_node_num_step+1) 
 
-        node_label = "{0}={1}".format(node_id, indexer.deconvert_swallow([int(node_word)])[0]) if indexer is not None else "{0}={1}".format(node_id, node_word)
+        node_label = "{0}={1}".format(node_id, escape_dot_label(indexer.deconvert_swallow([int(node_word)])[0]) if indexer is not None else "{0}={1}".format(node_id, node_word))
         # node_label = indexer.deconvert_swallow([int(node_word)])[0]
 
         if node_id == highlighted_src_node_id:
