@@ -20,6 +20,8 @@ import graphviz as gv
 import uuid
 import threading
 import timeit
+from Queue import Queue
+import multiprocessing
 
 logging.basicConfig()
 log = logging.getLogger("rnns:evaluation")
@@ -270,15 +272,27 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
             start_time = timeit.default_timer()
             workers = []
             trans_range = range(min(tree_nbest, len(translations))) if tree_nbest is not None else range(1) 
-            for trans_index in trans_range:
-                def make_target(index):
-                    return lambda: make_dot_graph(tree, translations=translations, output_file_basename="{0}/{1}-{2}".format(tree_dir, expanded_tree_fn_base, str(index).zfill(3)), indexer=tgt_indexer, highlighted_trans=index)
-                worker = threading.Thread(name="tree-builder-{0}".format(trans_index), target=make_target(trans_index))
+            graph_queue = Queue()
+
+            graph_worker_count = min(multiprocessing.cpu_count(), len(trans_range))
+            log.info("Generating resolution trees (graph_worker_count={0})...".format(graph_worker_count))
+            for i in range(graph_worker_count):
+                def make_target(graph_queue):
+                    while True:
+                        trans_index = graph_queue.get()
+                        make_dot_graph(tree, translations=translations, output_file_basename="{0}/{1}-{2}".format(tree_dir, expanded_tree_fn_base, str(trans_index).zfill(3)), indexer=tgt_indexer, highlighted_trans=trans_index)
+                        graph_queue.task_done()
+                worker = threading.Thread(name="graph-worker-{0}".format(i), target=make_target, args=(graph_queue,))
                 workers.append(worker)
+                worker.setDaemon(True)
                 worker.start()
-            for worker in workers:
-                worker.join()
-            log.info("All resolution trees generated in {0}".format(timeit.default_timer() - start_time))
+
+            for trans_index in trans_range:
+                graph_queue.put(trans_index)
+
+            graph_queue.join()
+
+            log.info("All resolution trees generated in {0}.".format(timeit.default_timer() - start_time))
 
         if nbest is not None:
             yield translations[:nbest]
