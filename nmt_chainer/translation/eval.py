@@ -285,7 +285,7 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
             ct = tgt_indexer.deconvert_post(translated)
             # log.info("ct={0}".format(ct))
             if nbest is not None:
-                out.write("{0} ||| {1} ||| {2} ||| {3}\n".format(idx, ct, score, normalized_score))
+                out.write(u"{0} ||| {1} ||| {2} ||| {3}\n".format(idx, ct, score, normalized_score))
             else:
                 out.write(ct + "\n")
             if unprocessed_output is not None:
