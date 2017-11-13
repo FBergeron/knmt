@@ -269,17 +269,19 @@ def translate_to_file_with_beam_search(dest_fn, gpu, encdec, eos_idx, src_data, 
         unprocessed_output = codecs.open(unprocessed_output_filename, "w", encoding="utf8")
 
     for idx, translations in enumerate(translation_iterator):
-        for src, translated, t, score, attn, unk_mapping, normalized_score in translations:
+        for idx2, trans_data in enumerate(translations):
+            src, translated, t, score, attn, unk_mapping, normalized_score = trans_data
             # log.info("translated={0}".format(translated))
             if rich_output is not None:
                 rich_output.add_info(src, translated, t, score, attn, unk_mapping=unk_mapping)
             if attn_vis is not None:
-                attn_vis.add_plot(
-                    src_indexer.deconvert_swallow(src),
-                    translated,
-                    attn,
-                    attn_graph_with_sum,
-                    attn_graph_attribs)
+                if nbest is None or idx2 == 0:
+                    attn_vis.add_plot(
+                        src_indexer.deconvert_swallow(src),
+                        translated,
+                        attn,
+                        attn_graph_with_sum,
+                        attn_graph_attribs)
             ct = tgt_indexer.deconvert_post(translated)
             # log.info("ct={0}".format(ct))
             if nbest is not None:
