@@ -30,7 +30,6 @@ import SocketServer
 import xml.etree.ElementTree as ET
 import re
 import subprocess
-import bokeh.embed
 
 logging.basicConfig()
 log = logging.getLogger("rnns:server")
