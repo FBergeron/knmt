@@ -408,6 +408,7 @@ def escape_dot_label(str):
 
 def make_dot_graph(tree, format="svg", translations=None, output_file_basename=None, indexer=None, highlighted_trans=0, highlighted_trans_color="red", highlighted_trans_width=5):
     g = gv.Digraph(format=format)
+    g.attr(ranksep='1')
 
     make_dot_graph_rec(g, tree, translations, highlighted_trans, highlighted_trans_color, highlighted_trans_width, indexer, set())
 
