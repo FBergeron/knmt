@@ -261,7 +261,8 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                     #    test = ''
                     # log.info("score slow <=> optimized: {0} <=> {1} {2}".format(slow, opti, test))
 
-                return x[1] / length_normalization + coverage_penalty
+                normalized_score = x[1] / length_normalization + coverage_penalty
+                return normalized_score if type(normalized_score) is np.float64 else chainer.cuda.to_cpu(normalized_score)
 
         translations = map(lambda trans: trans + (ranking_criterion(trans),), translations)
         translations.sort(key=lambda trans: trans[-1], reverse=True)
