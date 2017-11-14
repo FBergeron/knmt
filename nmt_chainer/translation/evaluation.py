@@ -8,6 +8,7 @@ __email__ = "fabien.cromieres@gmail.com"
 __status__ = "Development"
 
 from nmt_chainer.utilities.utils import make_batch_src, make_batch_src_tgt, minibatch_provider, compute_bleu_with_unk_as_wrong, de_batch, build_resolution_tree, make_dot_graph
+import cupy as cp
 import logging
 import numpy as np
 import math
@@ -262,7 +263,7 @@ def beam_search_translate(encdec, eos_idx, src_data, beam_width=20, beam_pruning
                     # log.info("score slow <=> optimized: {0} <=> {1} {2}".format(slow, opti, test))
 
                 normalized_score = x[1] / length_normalization + coverage_penalty
-                return normalized_score if type(normalized_score) is np.float64 else chainer.cuda.to_cpu(normalized_score)
+                return chainer.cuda.to_cpu(normalized_score) if type(normalized_score) is cp.core.core.ndarray else normalized_score
 
         translations = map(lambda trans: trans + (ranking_criterion(trans),), translations)
         translations.sort(key=lambda trans: trans[-1], reverse=True)
