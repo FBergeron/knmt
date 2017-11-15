@@ -229,7 +229,7 @@ class RequestHandler(SocketServer.BaseRequestHandler):
                     log.info("text=@@@%s@@@" % text)
 
                     cmd = re.sub(r'%SENTENCE_ID', '/tmp/' + text_uid, self.server.segmenter_command)
-                    cmd = cmd % text
+                    cmd = cmd % text.replace("'", "'\"'\"'")
                     log.info("cmd=%s" % cmd)
                     start_cmd = timeit.default_timer()
 
@@ -281,7 +281,7 @@ class RequestHandler(SocketServer.BaseRequestHandler):
                     if self.server.pp_command is not None:
                         def apply_pp(str):
                             pp_cmd = re.sub(r'%SENTENCE_ID', '/tmp/' + text_uid, self.server.pp_command)
-                            pp_cmd = pp_cmd % str.replace("'", "''")
+                            pp_cmd = pp_cmd % str.replace("'", "'\"'\"'")
                             log.info("pp_cmd=%s" % pp_cmd)
 
                             start_pp_cmd = timeit.default_timer()
