@@ -62,4 +62,4 @@ class TestServer:
                 process.send_signal(signal.SIGTERM)
             server_process.terminate()
 
-        assert(resp_json['out'] == "die Brille sind rot\n")
+        assert(resp_json['out'] == "die Brille sind rot")
