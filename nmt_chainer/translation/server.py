@@ -222,86 +222,98 @@ class RequestHandler(SocketServer.BaseRequestHandler):
                 segmented_input = []
                 segmented_output = []
                 mapping = []
-                sentences = root.findall('sentence')
-                for idx, sentence in enumerate(sentences):
-                    sentence_number = sentence.get('id')
-                    text = sentence.findtext('i_sentence').strip()
-                    log.info("text=@@@%s@@@" % text)
+                best_sentences = []
+                best_scores = []
+                best_norm_scores = []
 
-                    cmd = re.sub(r'%SENTENCE_ID', '/tmp/' + text_uid, self.server.segmenter_command)
-                    cmd = cmd % text.replace("'", "'\"'\"'")
-                    log.info("cmd=%s" % cmd)
-                    start_cmd = timeit.default_timer()
+                sentence = root.findall('sentence')[0]
+                sentence_number = sentence.get('id')
+                text = sentence.findtext('i_sentence').strip()
+                log.info("text=@@@%s@@@" % text)
 
-                    parser_output = subprocess.check_output(cmd, shell=True)
+                cmd = re.sub(r'%SENTENCE_ID', '/tmp/' + text_uid, self.server.segmenter_command)
+                cmd = cmd % text.replace("'", "'\"'\"'")
+                log.info("cmd=%s" % cmd)
+                start_cmd = timeit.default_timer()
 
-                    log.info(
-                        "Segmenter request processed in {} s.".format(
-                            timeit.default_timer() - start_cmd))
-                    log.info("parser_output=%s" % parser_output)
+                parser_output = subprocess.check_output(cmd, shell=True)
 
-                    words = []
-                    if 'parse_server' == self.server.segmenter_format:
-                        for line in parser_output.split("\n"):
-                            if (line.startswith('#')):
-                                continue
-                            elif (not line.strip()):
-                                break
-                            else:
-                                parts = line.split("\t")
-                                word = parts[2]
-                                words.append(word)
-                    elif 'morph' == self.server.segmenter_format:
-                        for pair in parser_output.split(' '):
-                            if pair != '':
-                                word, pos = pair.split('_')
-                                words.append(word)
-                    elif 'plain' == self.server.segmenter_format:
-                        words = parser_output.split(' ')
+                log.info(
+                    "Segmenter request processed in {} s.".format(
+                        timeit.default_timer() - start_cmd))
+                log.info("parser_output=%s" % parser_output)
+
+                words = []
+                if 'parse_server' == self.server.segmenter_format:
+                    for line in parser_output.split("\n"):
+                        if (line.startswith('#')):
+                            continue
+                        elif (not line.strip()):
+                            break
+                        else:
+                            parts = line.split("\t")
+                            word = parts[2]
+                            words.append(word)
+                elif 'morph' == self.server.segmenter_format:
+                    for pair in parser_output.split(' '):
+                        if pair != '':
+                            word, pos = pair.split('_')
+                            words.append(word)
+                elif 'plain' == self.server.segmenter_format:
+                    words = parser_output.split(' ')
+                else:
+                    pass
+                splitted_sentence = ' '.join(words)
+                # log.info("splitted_sentence=" + splitted_sentence)
+
+                splitted_sentence_without_kw = splitted_sentence
+                if os.path.isfile(kw_filename):
+                    keywords = read_keyword_file(kw_filename)
+                    for kw, val in keywords.iteritems():
+                        splitted_sentence_without_kw = re.sub("<{0}>".format(kw), val.encode('utf-8'), splitted_sentence_without_kw)
+                    # log.info("splitted_sentence_without_kw={0}".format(splitted_sentence_without_kw))
+
+                log.info(timestamped_msg("Translating sentence"))
+                decoded_sentence = splitted_sentence.decode('utf-8')
+                trans_result, script, div, unk_mapping = self.server.translator.translate("{0}-{1}".format(article_id, sentence_number.zfill(3)), decoded_sentence,
+                                                                                         beam_width, beam_pruning_margin, beam_score_coverage_penalty, beam_score_coverage_penalty_strength, nb_steps, nb_steps_ratio, remove_unk, normalize_unicode_unk, attempt_to_relocate_unk_source,
+                                                                                         beam_score_length_normalization, beam_score_length_normalization_strength, post_score_length_normalization, post_score_length_normalization_strength, post_score_coverage_penalty, post_score_coverage_penalty_strength,
+                                                                                         groundhog, force_finish, prob_space_combination, attn_graph_width, attn_graph_height, nbest_sentences)
+                if nbest_sentences is not None:
+                    best_translations = trans_result.splitlines()
+
+                    best_sentences = [best_trans.split(' ||| ')[1] for best_trans in best_translations]
+                    best_scores = [best_trans.split(' ||| ')[2] for best_trans in best_translations]
+                    best_norm_scores = [best_trans.split(' ||| ')[3] for best_trans in best_translations]
+
+                    segmented_output.append(best_sentences[0].strip(' \n\t\r'))
+                else:
+                    segmented_output.append(trans_result.strip(' \n\t\r'))
+
+                if self.server.pp_command is not None:
+                    def apply_pp(str):
+                        pp_cmd = re.sub(r'%SENTENCE_ID', '/tmp/' + text_uid, self.server.pp_command)
+                        pp_cmd = pp_cmd % str.replace("'", "'\"'\"'")
+                        log.info("pp_cmd=%s" % pp_cmd)
+
+                        start_pp_cmd = timeit.default_timer()
+
+                        pp_output = subprocess.check_output(pp_cmd, shell=True)
+
+                        log.info("Postprocessor request processede in {} s.".format(timeit.default_timer() - start_pp_cmd))
+                        log.info("pp_output=%s" % pp_output)
+                        return pp_output
+                    if nbest_sentences is not None:
+                        best_sentences = [apply_pp(best_sentence).strip(' \n\t\r') for best_sentence in best_sentences]
+                        out = best_sentences[0]
                     else:
-                        pass
-                    splitted_sentence = ' '.join(words)
-                    # log.info("splitted_sentence=" + splitted_sentence)
+                        out = apply_pp(segmented_output[0]).strip(' \n\t\r')
+                else:
+                    out = segmented_output[0]
 
-                    splitted_sentence_without_kw = splitted_sentence
-                    if os.path.isfile(kw_filename):
-                        keywords = read_keyword_file(kw_filename)
-                        for kw, val in keywords.iteritems():
-                            splitted_sentence_without_kw = re.sub("<{0}>".format(kw), val.encode('utf-8'), splitted_sentence_without_kw)
-                        # log.info("splitted_sentence_without_kw={0}".format(splitted_sentence_without_kw))
-
-                    log.info(timestamped_msg("Translating sentence %d" % idx))
-                    decoded_sentence = splitted_sentence.decode('utf-8')
-                    translation, script, div, unk_mapping = self.server.translator.translate("{0}-{1}".format(article_id, sentence_number.zfill(3)), decoded_sentence,
-                                                                                             beam_width, beam_pruning_margin, beam_score_coverage_penalty, beam_score_coverage_penalty_strength, nb_steps, nb_steps_ratio, remove_unk, normalize_unicode_unk, attempt_to_relocate_unk_source,
-                                                                                             beam_score_length_normalization, beam_score_length_normalization_strength, post_score_length_normalization, post_score_length_normalization_strength, post_score_coverage_penalty, post_score_coverage_penalty_strength,
-                                                                                             groundhog, force_finish, prob_space_combination, attn_graph_width, attn_graph_height, nbest_sentences)
-                    out += translation
-
-                    if self.server.pp_command is not None:
-                        def apply_pp(str):
-                            pp_cmd = re.sub(r'%SENTENCE_ID', '/tmp/' + text_uid, self.server.pp_command)
-                            pp_cmd = pp_cmd % str.replace("'", "'\"'\"'")
-                            log.info("pp_cmd=%s" % pp_cmd)
-
-                            start_pp_cmd = timeit.default_timer()
-
-                            pp_output = subprocess.check_output(pp_cmd, shell=True)
-
-                            log.info("Postprocessor request processede in {} s.".format(timeit.default_timer() - start_pp_cmd))
-                            log.info("pp_output=%s" % pp_output)
-                            return pp_output
-                        out = apply_pp(out)
-                        translation = apply_pp(translation)
-
-                    segmented_input.append(splitted_sentence_without_kw)
-                    segmented_output.append(translation)
-                    mapping.append(unk_mapping)
-                    graph_data.append(
-                        (script.encode('utf-8'), div.encode('utf-8')))
-
-                    # There should always be only one sentence for now. - FB
-                    break
+                segmented_input.append(splitted_sentence_without_kw.strip(' \n\t\r'))
+                mapping.append(unk_mapping)
+                graph_data.append((script.encode('utf-8'), div.encode('utf-8')))
 
                 response['article_id'] = article_id
                 response['sentence_number'] = sentence_number
@@ -309,6 +321,9 @@ class RequestHandler(SocketServer.BaseRequestHandler):
                 response['segmented_input'] = segmented_input
                 response['segmented_output'] = segmented_output
                 response['mapping'] = map(lambda x: ' '.join(x), mapping)
+                response['best_sentences'] = best_sentences
+                response['best_scores'] = best_scores
+                response['best_norm_scores'] = best_norm_scores
                 graphes = []
                 for gd in graph_data:
                     script, div = gd
